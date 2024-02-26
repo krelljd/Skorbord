@@ -1,0 +1,98 @@
+.matte {
+    width: 100%;
+    height: 104px;
+    background: #000000;
+    border: 2px black solid;
+}
+
+.scoreboard {
+    width: 100%;
+    height: 50px;
+    background: #D9D9D9;
+    line-height: 50px;
+}
+
+.teams {
+    width: calc(100% - 18px);
+    left: 1vw;
+    position: relative;
+}
+
+.scoring {
+    right: .5vw;
+    top: 0px;
+    position: absolute;
+    display: flex;
+}
+
+.team-name {
+    width: 70%;
+    height: 50px;
+    left: 2vw;
+    position: absolute;
+    color: black;
+    font-family: Saira;
+    font-weight: 700;
+}
+
+.team-color-1 {
+    color: black;
+    width: 1.25vw;
+    height: 50px;
+    left: 0px;
+    position: absolute;
+    border-left: 2px black solid;
+    border-right: 2px black solid;
+    border-bottom: 1px black solid;
+}
+
+.team-color-2 {
+    color: black;
+    width: 1.25vw;
+    height: 50px;
+    left: 0px;
+    position: absolute;
+    border-left: 2px black solid;
+    border-right: 2px black solid;
+    border-top: 1px black solid;
+}
+
+.set-box-1,
+.set-box-2 {
+    width: 10vw;
+    height: 50px;
+    background: #2eb1c5;
+    border-left: 2px black solid;
+    border-right: 2px black solid;
+    margin-left: 2px;
+}
+
+.set-box-3 {
+    width: 10vw;
+    height: 50px;
+    background: #2eb1c54f;
+    border-left: 2px black solid;
+    border-right: 2px black solid;
+    margin-left: 2px;
+}
+
+.score-winner {
+    text-align: center;
+    color: white;
+    font-family: Saira;
+    font-weight: 700;
+}
+
+.score {
+    text-align: center;
+    color: black;
+    font-family: Saira;
+    font-weight: 700;
+}
+
+.score-inactive {
+    text-align: center;
+    color: rgba(0, 0, 0, 0);
+    font-family: Saira;
+    font-weight: 700;
+}

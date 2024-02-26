@@ -1,0 +1,49 @@
+{
+  "Files": [
+    {
+      "Id": "C:\\src\\Skorbord\\obj\\Debug\\net8.0\\scopedcss\\projectbundle\\Skorbord.bundle.scp.css",
+      "PackagePath": "staticwebassets\\Skorbord.bundle.scp.css"
+    },
+    {
+      "Id": "C:\\src\\Skorbord\\wwwroot\\app.css",
+      "PackagePath": "staticwebassets\\app.css"
+    },
+    {
+      "Id": "C:\\src\\Skorbord\\wwwroot\\board.css",
+      "PackagePath": "staticwebassets\\board.css"
+    },
+    {
+      "Id": "C:\\src\\Skorbord\\wwwroot\\bootstrap\\bootstrap.min.css",
+      "PackagePath": "staticwebassets\\bootstrap\\bootstrap.min.css"
+    },
+    {
+      "Id": "C:\\src\\Skorbord\\wwwroot\\bootstrap\\bootstrap.min.css.map",
+      "PackagePath": "staticwebassets\\bootstrap\\bootstrap.min.css.map"
+    },
+    {
+      "Id": "C:\\src\\Skorbord\\wwwroot\\favicon.png",
+      "PackagePath": "staticwebassets\\favicon.png"
+    },
+    {
+      "Id": "C:\\src\\Skorbord\\wwwroot\\scoreboard.svg",
+      "PackagePath": "staticwebassets\\scoreboard.svg"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.Skorbord.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.build.Skorbord.props",
+      "PackagePath": "build\\Skorbord.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildMultiTargeting.Skorbord.props",
+      "PackagePath": "buildMultiTargeting\\Skorbord.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildTransitive.Skorbord.props",
+      "PackagePath": "buildTransitive\\Skorbord.props"
+    }
+  ],
+  "ElementsToRemove": []
+}

@@ -1,0 +1,160 @@
+@page "/board"
+@layout BasicLayout
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.SignalR.Client
+@inject NavigationManager Navigation
+@implements IAsyncDisposable
+
+<PageTitle>Scoreboard</PageTitle>
+
+<div class="matte">
+    <div class="scoreboard">
+        <div class="teams">
+            <div class="scoring">
+                <div class="set-box-1">
+                    <div class="@t1s1scoreClass">
+                        @scores[0]
+                    </div>
+                </div>
+                <div class="set-box-2">
+                    <div class="@t1s2scoreClass">
+                        @scores[2]
+                    </div>
+                </div>
+                <div class="set-box-3">
+                    <div class="@t1s3scoreClass">
+                        @scores[4]
+                    </div>
+                </div>
+            </div>
+            <div class="team-color-1" style="background: @team1Color;" />
+            <div class="team-name">@team1</div>
+        </div>
+    </div>
+    <div class="scoreboard">
+        <div class="teams">
+            <div class="scoring">
+                <div class="set-box-1">
+                    <div class="@t2s1scoreClass">
+                        @scores[1]
+                    </div>
+                </div>
+                <div class="set-box-2">
+                    <div class="@t2s2scoreClass">
+                        @scores[3]
+                    </div>
+                </div>
+                <div class="set-box-3">
+                    <div class="@t2s3scoreClass">
+                        @scores[5]
+                    </div>
+                </div>
+            </div>
+            <div class="team-color-2" style="background: @team2Color;" />
+            <div class="team-name">@team2</div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private HubConnection? hubConnection;
+    private int[] scores = new int[] { 0, 0, 0, 0, 0, 0 };
+    private string t1s1scoreClass = "score";
+    private string t2s1scoreClass = "score";
+    private string t1s2scoreClass = "score score-inactive";
+    private string t2s2scoreClass = "score score-inactive";
+    private string t1s3scoreClass = "score score-inactive";
+    private string t2s3scoreClass = "score score-inactive";
+    private string team1 = "C757 15T Tsunami";
+    private string team2 = "Some Club 15 National";
+    private string team1Color = "#2EB1C5";
+    private string team2Color = "#FFFFFF";
+
+    protected override async Task OnInitializedAsync()
+    {
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/scorehub"))
+            .Build();
+
+        hubConnection.On<int[]>("UpdateScores", (scoreArray) =>
+        {
+            scores = scoreArray;
+
+            var scoreDictionary = processScoreChanges(scoreArray);
+            t1s1scoreClass = scoreDictionary[0];
+            t2s1scoreClass = scoreDictionary[1];
+            t1s2scoreClass = scoreDictionary[2];
+            t2s2scoreClass = scoreDictionary[3];
+            t1s3scoreClass = scoreDictionary[4];
+            t2s3scoreClass = scoreDictionary[5];
+
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<string, string, string, string>("UpdateTeams", (t1, t1Color, t2, t2Color) =>
+        {
+            team1 = t1;
+            team2 = t2;
+            team1Color = t1Color;
+            team2Color = t2Color;
+
+            InvokeAsync(StateHasChanged);
+        });
+
+        await hubConnection.StartAsync();
+    }
+    public bool IsConnected => hubConnection?.State == HubConnectionState.Connected;
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+    private Dictionary<int, string> processScoreChanges(int[] scores)
+    {
+        var winningScore = 25;
+        var isThirdSet = false;
+        var scoreDictionary = scores.Select((score, index) => new { Index = index, Score = score })
+                                    .ToDictionary(x => x.Index, x => "score score-inactive");
+
+        //always activate first set
+        activateNextSet(scoreDictionary, -1);
+        //track winning scores to determine if the same team won both sets
+        var winningScoreIndexes = new List<int>{};
+        for (int i = 0; i < scores.Length - 1; i++)
+        {
+            //only compare each set's scores - {0,1}{2,3}{4,5}
+            if (i % 2 == 1) continue;
+
+            //determine if this is the third set
+            isThirdSet = i >= 4;
+            //third set only goes to 15
+            if (isThirdSet) winningScore = 15;
+
+            if (Math.Max(scores[i], scores[i + 1]) >= winningScore && Math.Abs(scores[i] - scores[i + 1]) >= 2)
+            {
+                int winnerIndex = scores[i] > scores[i + 1] ? i : i + 1;
+                winningScoreIndexes.Add(winnerIndex);
+                scoreDictionary[winnerIndex] = "score-winner";
+                //if there are 3 winning scores, do nothing
+                if (winningScoreIndexes.Count == 3) continue;
+                //don't show 3rd set scores if the same team won both sets
+                if (winningScoreIndexes.Count == 2)
+                {
+                    if (winningScoreIndexes[0] % 2 == winningScoreIndexes[1] % 2) continue;
+                }
+                activateNextSet(scoreDictionary, i + 1);
+            }
+        }
+
+        return scoreDictionary;
+    }
+
+    private void activateNextSet(Dictionary<int, string> scoreDictionary, int currentIndex)
+    {
+        scoreDictionary[currentIndex + 1] = scoreDictionary[currentIndex + 1].Replace(" score-inactive", "");
+        scoreDictionary[currentIndex + 2] = scoreDictionary[currentIndex + 2].Replace(" score-inactive", "");
+    }
+}

@@ -1,0 +1,21 @@
+<FluentTextField type="color" style="@Style"
+    Value="@CurrentColor"
+    ValueExpression="@(() => CurrentColor)"
+    ValueChanged="@((string value) => UpdateColor(value))">
+    <FluentIcon Value="@(new Icons.Regular.Size16.Eyedropper())" Slot="start" Color="Color.Accent" />
+</FluentTextField>
+
+@code {
+    [Parameter]
+    public string CurrentColor { get; set; } = "#FFFFFF";
+    [Parameter]
+    public string Style { get; set; } = "width: 20vw;";
+    [Parameter]
+    public EventCallback<string> ReturnedColor { get; set; }
+
+    private void UpdateColor(string value)
+    {
+        CurrentColor = value;
+        ReturnedColor.InvokeAsync(CurrentColor);
+    }
+}
