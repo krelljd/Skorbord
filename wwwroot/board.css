@@ -13,20 +13,18 @@
 }
 
 .teams {
-    width: calc(100% - 18px);
-    left: 1vw;
+    /* width: 100%; */
     position: relative;
 }
 
 .scoring {
-    right: .5vw;
+    right: 0;
     top: 0px;
     position: absolute;
     display: flex;
 }
 
 .team-name {
-    width: 70%;
     height: 50px;
     left: 2vw;
     position: absolute;
@@ -37,7 +35,7 @@
 
 .team-color-1 {
     color: black;
-    width: 1.25vw;
+    width: 1.5vw;
     height: 50px;
     left: 0px;
     position: absolute;
@@ -48,7 +46,7 @@
 
 .team-color-2 {
     color: black;
-    width: 1.25vw;
+    width: 1.5vw;
     height: 50px;
     left: 0px;
     position: absolute;
