@@ -65,36 +65,52 @@
         </FluentButton>
     </FluentStack>
     <hr>
-    Edit Team Info
+    Administration
     <FluentStack Orientation="Orientation.Horizontal">
         <FluentTextField @bind-Value="@team1" Class="team-name-input" Placeholder="Team 1 Name"></FluentTextField>
-        <ColorSelector CurrentColor="@t1Color" ReturnedColor="Team1ColorChanged" Style="width: 20vw;"></ColorSelector>
+        <ColorSelector CurrentColor="@team1Color" ReturnedColor="Team1ColorChanged" Style="width: 20vw;"></ColorSelector>
     </FluentStack>
     <FluentStack Orientation="Orientation.Horizontal">
         <FluentTextField @bind-Value="@team2" Class="team-name-input" Placeholder="Team 2 Name"></FluentTextField>
-        <ColorSelector CurrentColor="@t2Color" ReturnedColor="Team2ColorChanged" Style="width: 20vw;"></ColorSelector>
+        <ColorSelector CurrentColor="@team2Color" ReturnedColor="Team2ColorChanged" Style="width: 20vw;"></ColorSelector>
+    </FluentStack>
+    <FluentStack Orientation="Orientation.Horizontal">
+        <FluentTextField @bind-Value="@tournament" Class="team-name-input" Placeholder="Tournament Name"></FluentTextField>
+        <ColorSelector CurrentColor="@scoreboardColor" ReturnedColor="BoardColorChanged" Style="width: 20vw;"></ColorSelector>
     </FluentStack>
     <br>
     <FluentButton IconStart="@(new Icons.Regular.Size24.Save())"
-                    OnClick="@(UpdateTeams)" 
+                    OnClick="@(UpdateMatchInfo)" 
                     Disabled="@(!IsConnected)"
                     Appearance="Appearance.Accent" 
-                    Style="width: 100%;">
-    Save Team Info
+                    Class="save-button">
+    Save Match Info
     </FluentButton>
     <br>
     <hr>
-    Manual Scoring
-    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Center">
-        <input class="score-input" Size="2" @bind="@scores[0]"></input>
-        <input class="score-input" Size="2" @bind="@scores[2]"></input>
-        <input class="score-input" Size="2" @bind="@scores[4]"></input>
-    </FluentStack>
-    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Center">
-        <input class="score-input" Size="2" @bind="@scores[1]"></input>
-        <input class="score-input" Size="2" @bind="@scores[3]"></input>
-        <input class="score-input" Size="2" @bind="@scores[5]"></input>
-    </FluentStack>
+    <FluentAccordion>
+        <FluentAccordionItem Heading="Manual Scoring" HeadingLevel="2">
+            <FluentIcon Value="@(new Icons.Regular.Size20.Edit())" Color="@Color.Neutral" Slot="start" />
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Center">
+                <input class="score-input" Size="2" @bind="@scores[0]"></input>
+                <input class="score-input" Size="2" @bind="@scores[2]"></input>
+                <input class="score-input" Size="2" @bind="@scores[4]"></input>
+            </FluentStack>
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Center">
+                <input class="score-input" Size="2" @bind="@scores[1]"></input>
+                <input class="score-input" Size="2" @bind="@scores[3]"></input>
+                <input class="score-input" Size="2" @bind="@scores[5]"></input>
+            </FluentStack>
+            <br>
+            <FluentButton IconStart="@(new Icons.Regular.Size24.Save())"
+                    OnClick="@(UpdateScores)" 
+                    Disabled="@(!IsConnected)"
+                    Appearance="Appearance.Accent" 
+                    Class="save-button">
+            Save Scores
+            </FluentButton>
+        </FluentAccordionItem>
+    </FluentAccordion>
     <br>
     <br>
 </div>
@@ -104,8 +120,10 @@
     private List<string> messages = new List<string>();
     private string? team1 = "C757 15T Tsunami";
     private string? team2 = "Placeholder 15 National";
-    private string t1Color = "#2EB1C5";
-    private string t2Color = "#FFFFFF";
+    private string team1Color = "#2EB1C5";
+    private string team2Color = "#FFFFFF";
+    private string scoreboardColor = "#D9D9D9";
+    private string tournament = "Tournament";
     private int[] scores = new int[]{0,0,0,0,0,0};
 
     public enum SetOptions {
@@ -127,10 +145,14 @@
             InvokeAsync(StateHasChanged);
         });
 
-        hubConnection.On<string, string>("UpdateTeams", (t1, t2) =>
+        hubConnection.On<string, string, string, string, string, string>("UpdateMatchInfo", (t1, t1Color, t2, t2Color, tName, sbColor) =>
         {
             team1 = t1;
             team2 = t2;
+            team1Color = t1Color;
+            team2Color = t2Color;
+            tournament = tName;
+            scoreboardColor = sbColor;
             InvokeAsync(StateHasChanged);
         });
 
@@ -164,23 +186,29 @@
         await UpdateScores();
     }
 
-    private async Task UpdateTeams()
+    private async Task UpdateMatchInfo()
     {
         if (hubConnection is not null)
         {
-            await hubConnection.SendAsync("SendTeamsMessage", team1, t1Color, team2, t2Color);
+            await hubConnection.SendAsync("SendMatchInfoMessage", team1, team1Color, team2, team2Color, tournament, scoreboardColor);
         }
     }
 
     private void Team1ColorChanged(string e)
     {  
-        t1Color = e;
+        team1Color = e;
         InvokeAsync(StateHasChanged);
     }
 
     private void Team2ColorChanged(string e)
     {
-        t2Color = e;
+        team2Color = e;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void BoardColorChanged(string e)
+    {
+        scoreboardColor = e;
         InvokeAsync(StateHasChanged);
     }
 

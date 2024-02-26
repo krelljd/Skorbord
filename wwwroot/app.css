@@ -73,6 +73,10 @@ h1:focus {
     font-size: 1.5rem;
 }
 
+.save-button {
+    width: 100%;
+}
+
 .team-name-input {
     width:80vw;
 }

@@ -8,7 +8,7 @@
 <PageTitle>Scoreboard</PageTitle>
 
 <div class="matte">
-    <div class="scoreboard">
+    <div class="scoreboard" style="background: @scoreboardColor;">
         <div class="teams">
             <div class="scoring">
                 <div class="set-box-1">
@@ -31,7 +31,7 @@
             <div class="team-name">@team1</div>
         </div>
     </div>
-    <div class="scoreboard">
+    <div class="scoreboard" style="background: @scoreboardColor;">
         <div class="teams">
             <div class="scoring">
                 <div class="set-box-1">
@@ -68,6 +68,9 @@
     private string team2 = "Placeholder 15 National";
     private string team1Color = "#2EB1C5";
     private string team2Color = "#FFFFFF";
+    private string tournament = "Tournament";
+    private string scoreboardColor = "#D9D9D9";
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -90,13 +93,14 @@
             InvokeAsync(StateHasChanged);
         });
 
-        hubConnection.On<string, string, string, string>("UpdateTeams", (t1, t1Color, t2, t2Color) =>
+        hubConnection.On<string, string, string, string, string, string>("UpdateMatchInfo", (t1, t1Color, t2, t2Color, tName, sbColor) =>
         {
             team1 = t1;
             team2 = t2;
             team1Color = t1Color;
             team2Color = t2Color;
-
+            tournament = tName;
+            scoreboardColor = sbColor;
             InvokeAsync(StateHasChanged);
         });
 
