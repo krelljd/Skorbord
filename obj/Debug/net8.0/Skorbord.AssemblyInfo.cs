@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Skorbord")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c15c4a4b6d193fb09666c4fbcbf72b2db1d06ef9")]
 [assembly: System.Reflection.AssemblyProductAttribute("Skorbord")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Skorbord")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
