@@ -5,6 +5,19 @@ using Microsoft.FluentUI.AspNetCore.Components;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var corsPolicy = "signalrPolicy";
+builder.Services.AddCors(options => {
+    options.AddPolicy(name: corsPolicy,
+    policy => 
+    {
+        policy
+        .AllowAnyHeader()
+        .AllowAnyOrigin()
+        .AllowCredentials()
+        .WithOrigins("http://localhost:8000", "https://skorbord.app");
+    });
+});
+
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
@@ -25,10 +38,12 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
+    //app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+app.UseCors(corsPolicy);
+
+//app.UseHttpsRedirection();
 app.UseResponseCompression();
 
 app.UseStaticFiles();

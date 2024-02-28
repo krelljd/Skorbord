@@ -135,8 +135,19 @@
     private SetOptions CurrentSet;
     protected override async Task OnInitializedAsync()
     {
+        var hubUrl = "https://skorbord.app/scorehub";
         hubConnection = new HubConnectionBuilder()
-            .WithUrl(Navigation.ToAbsoluteUri("/scorehub"))
+            .WithUrl(hubUrl, options => {
+               //options.SkipNegotiation = true; 
+            })
+            .ConfigureLogging(logging =>
+            {
+                // Log to the Console
+                logging.AddConsole();
+
+                // This will set ALL logging to Debug level
+                logging.SetMinimumLevel(LogLevel.Debug);
+            })
             .Build();
 
         hubConnection.On<int[]>("UpdateScores", (scoreArray) =>
