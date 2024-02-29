@@ -4,6 +4,7 @@ using Skorbord.Hubs;
 using Microsoft.FluentUI.AspNetCore.Components;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Host.UseSystemd();
 
 var corsPolicy = "signalrPolicy";
 builder.Services.AddCors(options => {
