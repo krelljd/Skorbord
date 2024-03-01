@@ -1,8 +1,14 @@
-@page "/board"
+@page "/board/{BoardSqid?}"
+
 @layout BasicLayout
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.SignalR.Client
+@using Microsoft.EntityFrameworkCore
+@using Sqids
+@using Skorbord.Data
 @inject NavigationManager Navigation
+@inject SqidsEncoder<int> sqids
+@inject IDbContextFactory<Skorbord.Data.ScoreboardContext> DbFactory
 @implements IAsyncDisposable
 
 <PageTitle>Scoreboard</PageTitle>
@@ -57,6 +63,11 @@
 </div>
 @code {
     private HubConnection? hubConnection;
+    public bool IsConnected => hubConnection?.State == HubConnectionState.Connected;
+
+    [Parameter]
+    public string? BoardSqid { get; set; }
+
     private int[] scores = new int[] { 0, 0, 0, 0, 0, 0 };
     private string t1s1scoreClass = "score";
     private string t2s1scoreClass = "score";
@@ -70,60 +81,79 @@
     private string team2Color = "#FFFFFF";
     private string tournament = "Tournament";
     private string scoreboardColor = "#D9D9D9";
+    
 
 
     protected override async Task OnInitializedAsync()
     {
-        var hubUrl = "https://skorbord.app/scorehub";
+#if DEBUG
+var hubUrl = "https://skorbord.app/scorehub";
+#else
+        var hubUrl = Navigation.ToAbsoluteUri("/scorehub");
+#endif
+
         hubConnection = new HubConnectionBuilder()
-            .WithUrl(hubUrl, options => {
-               //options.SkipNegotiation = true; 
-            })
-            .ConfigureLogging(logging =>
+        .WithUrl(hubUrl, options =>
+        {
+            //options.SkipNegotiation = true;
+        })
+        .ConfigureLogging(logging =>
+        {
+            // Log to the Console
+            logging.AddConsole();
+
+            // This will set ALL logging to Debug level
+            logging.SetMinimumLevel(LogLevel.Debug);
+        })
+        .Build();
+
+        await base.OnInitializedAsync();
+
+        // decode sqid
+        var boardId = getBoardIdFromSqid(BoardSqid!);
+
+        if (boardId > 0)
+        {
+            //retrieve data
+            using var context = DbFactory.CreateDbContext();
+
+            if (context.Scoreboards != null)
             {
-                // Log to the Console
-                logging.AddConsole();
+                var scoreboard = await context.Scoreboards.AsNoTracking()
+                    .FirstAsync<Scoreboard>(s => s.ScoreboardId == boardId);
 
-                // This will set ALL logging to Debug level
-                logging.SetMinimumLevel(LogLevel.Debug);
-            })
-            .Build();
+                var scoreArray = new ScoreArray(scoreboard.Scores);
+                scores = scoreArray.Scores;
 
-        hubConnection.On<int[]>("UpdateScores", (scoreArray) =>
-        {
-            scores = scoreArray;
+                hubConnection.On<int[]>("UpdateScores", (scoreArray) =>
+                {
+                    scores = scoreArray;
 
-            var scoreDictionary = processScoreChanges(scoreArray);
-            t1s1scoreClass = scoreDictionary[0];
-            t2s1scoreClass = scoreDictionary[1];
-            t1s2scoreClass = scoreDictionary[2];
-            t2s2scoreClass = scoreDictionary[3];
-            t1s3scoreClass = scoreDictionary[4];
-            t2s3scoreClass = scoreDictionary[5];
+                    var scoreDictionary = processScoreChanges(scoreArray);
+                    t1s1scoreClass = scoreDictionary[0];
+                    t2s1scoreClass = scoreDictionary[1];
+                    t1s2scoreClass = scoreDictionary[2];
+                    t2s2scoreClass = scoreDictionary[3];
+                    t1s3scoreClass = scoreDictionary[4];
+                    t2s3scoreClass = scoreDictionary[5];
 
-            InvokeAsync(StateHasChanged);
-        });
+                    InvokeAsync(StateHasChanged);
+                });
 
-        hubConnection.On<string, string, string, string, string, string>("UpdateMatchInfo", (t1, t1Color, t2, t2Color, tName, sbColor) =>
-        {
-            team1 = t1;
-            team2 = t2;
-            team1Color = t1Color;
-            team2Color = t2Color;
-            tournament = tName;
-            scoreboardColor = sbColor;
-            InvokeAsync(StateHasChanged);
-        });
+                hubConnection.On<string, string, string, string, string, string>("UpdateMatchInfo", (t1, t1Color, t2, t2Color, tName,
+                sbColor) =>
+                {
+                    team1 = t1;
+                    team2 = t2;
+                    team1Color = t1Color;
+                    team2Color = t2Color;
+                    tournament = tName;
+                    scoreboardColor = sbColor;
+                    InvokeAsync(StateHasChanged);
+                });
 
-        await hubConnection.StartAsync();
-    }
-    public bool IsConnected => hubConnection?.State == HubConnectionState.Connected;
-
-    public async ValueTask DisposeAsync()
-    {
-        if (hubConnection is not null)
-        {
-            await hubConnection.DisposeAsync();
+                await hubConnection.StartAsync();
+            }
         }
     }
     private Dictionary<int, string> processScoreChanges(int[] scores)
@@ -131,12 +161,12 @@
         var winningScore = 25;
         var isThirdSet = false;
         var scoreDictionary = scores.Select((score, index) => new { Index = index, Score = score })
-                                    .ToDictionary(x => x.Index, x => "score score-inactive");
+        .ToDictionary(x => x.Index, x => "score score-inactive");
 
         //always activate first set
         activateNextSet(scoreDictionary, -1);
         //track winning scores to determine if the same team won both sets
-        var winningScoreIndexes = new List<int>{};
+        var winningScoreIndexes = new List<int> { };
         for (int i = 0; i < scores.Length - 1; i++)
         {
             //only compare each set's scores - {0,1}{2,3}{4,5}
@@ -170,5 +200,27 @@
     {
         scoreDictionary[currentIndex + 1] = scoreDictionary[currentIndex + 1].Replace(" score-inactive", "");
         scoreDictionary[currentIndex + 2] = scoreDictionary[currentIndex + 2].Replace(" score-inactive", "");
+    }
+
+    private int getBoardIdFromSqid(string sqid)
+    {
+        if (sqids.Decode(sqid) is [var decodedId] && sqid == sqids.Encode(decodedId))
+        {
+            // `sqid` decodes into a single number and is canonical, here you can safely proceed with the rest of the logic
+            return 1;
+        }
+        else
+        {
+            // consider `sqid` invalid — e.g. respond with 404
+            return 1;
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
     }
 }

@@ -1,9 +1,15 @@
 using Skorbord.Components;
 using Microsoft.AspNetCore.ResponseCompression;
-using Skorbord.Hubs;
 using Microsoft.FluentUI.AspNetCore.Components;
+using Microsoft.EntityFrameworkCore.Sqlite;
+using Sqids;
+using Skorbord.Hubs;
+using Skorbord.Data;
+using Microsoft.EntityFrameworkCore;
+using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
+
 builder.Host.UseSystemd();
 
 var corsPolicy = "signalrPolicy";
@@ -29,6 +35,16 @@ builder.Services.AddResponseCompression(opts =>
         new[] { "application/octet-stream"}
     );
 });
+
+builder.Services.AddSingleton(new SqidsEncoder<int>(new()
+{
+    Alphabet = "hPrUuF3oQfeEGwRZX1d9ac5MB0AkgLqlynOpTVzCWJtDjsN8I7i42xvHSK6Ymb",
+    MinLength = 6,
+}));
+
+Console.WriteLine($"Sqlite::Data Source={ScoreboardContext.ScoreboardsDb}.db");
+builder.Services.AddDbContextFactory<ScoreboardContext>(opt =>
+    opt.UseSqlite($"Data Source={ScoreboardContext.ScoreboardsDb}.db"));
 
 builder.Services.AddFluentUIComponents();
 

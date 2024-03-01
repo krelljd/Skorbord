@@ -14,3 +14,14 @@ public class ScoreHub : Hub
         await Clients.All.SendAsync("UpdateMatchInfo", t1, t1Color, t2, t2Color, tName, sbColor);
     }
 }
+
+
+// // Storing an array of integers
+// int[] myArray = { 8, 4, 345, 378, 34456, 7 };
+// string arrayString = string.Join(",", myArray);
+// // Insert 'arrayString' into the SQLite database
+
+// // Retrieving the data
+// // Assume 'value' contains the string from the database
+// string[] tokens = value.Split(',');
+// int[] retrievedArray = Array.ConvertAll(tokens, int.Parse);

@@ -1,8 +1,13 @@
-@page "/score"
+@page "/score/{BoardSqid}"
 @layout BasicLayout
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.SignalR.Client
+@using Microsoft.EntityFrameworkCore
+@using Sqids
+@using Skorbord.Data
 @inject NavigationManager Navigation
+@inject SqidsEncoder<int> sqids
+@inject IDbContextFactory<Skorbord.Data.ScoreboardContext> DbFactory
 @implements IAsyncDisposable
 
 <PageTitle>Score</PageTitle>
@@ -89,7 +94,9 @@
     <br>
     <hr>
     <FluentAccordion>
-        <FluentAccordionItem Heading="Manual Scoring" HeadingLevel="2">
+        <FluentAccordionItem Heading="Advanced Settings" HeadingLevel="1">
+            <FluentLabel Alignment="HorizontalAlignment.Center">Board: <a href="@boardUri" target="_blank">@boardUri</a></FluentLabel>
+            <br>
             <FluentIcon Value="@(new Icons.Regular.Size20.Edit())" Color="@Color.Neutral" Slot="start" />
             <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Center">
                 <input class="score-input" Size="2" @bind="@scores[0]"></input>
@@ -125,6 +132,11 @@
     private string scoreboardColor = "#D9D9D9";
     private string tournament = "Tournament";
     private int[] scores = new int[]{0,0,0,0,0,0};
+    private int boardId;
+    private string boardUri = "#";
+
+    [Parameter]
+    public string? BoardSqid { get; set; }
 
     public enum SetOptions {
         Set1 = 0,
@@ -135,11 +147,13 @@
     private SetOptions CurrentSet;
     protected override async Task OnInitializedAsync()
     {
-        var hubUrl = "https://skorbord.app/scorehub";
+        #if DEBUG
+            var hubUrl = "https://skorbord.app/scorehub";
+        #else
+            var hubUrl = Navigation.ToAbsoluteUri("/scorehub");
+        #endif
         hubConnection = new HubConnectionBuilder()
-            .WithUrl(hubUrl, options => {
-               //options.SkipNegotiation = true; 
-            })
+            .WithUrl(hubUrl)
             .ConfigureLogging(logging =>
             {
                 // Log to the Console
@@ -150,24 +164,44 @@
             })
             .Build();
 
-        hubConnection.On<int[]>("UpdateScores", (scoreArray) =>
-        {
-            scores = scoreArray;
-            InvokeAsync(StateHasChanged);
-        });
+        // decode sqid
+        boardId = getBoardIdFromSqid(BoardSqid!);
+        var boardSqid = sqids.Encode(boardId);
+        boardUri = "/board/" + @boardSqid;
 
-        hubConnection.On<string, string, string, string, string, string>("UpdateMatchInfo", (t1, t1Color, t2, t2Color, tName, sbColor) =>
+        if (boardId > 0)
         {
-            team1 = t1;
-            team2 = t2;
-            team1Color = t1Color;
-            team2Color = t2Color;
-            tournament = tName;
-            scoreboardColor = sbColor;
-            InvokeAsync(StateHasChanged);
-        });
+            //retrieve data
+            using var context = DbFactory.CreateDbContext();
 
-        await hubConnection.StartAsync();
+            if (context.Scoreboards != null)
+            {
+                var scoreboard = await context.Scoreboards.AsNoTracking()
+                    .FirstAsync<Scoreboard>(s => s.ScoreboardId == boardId);
+
+                var scoreArray = new ScoreArray(scoreboard.Scores);
+                scores = scoreArray.Scores;
+
+                hubConnection.On<int[]>("UpdateScores", (scoreArray) =>
+                {
+                    scores = scoreArray;
+                    InvokeAsync(StateHasChanged);
+                });
+
+                hubConnection.On<string, string, string, string, string, string>("UpdateMatchInfo", (t1, t1Color, t2, t2Color, tName, sbColor) =>
+                {
+                    team1 = t1;
+                    team2 = t2;
+                    team1Color = t1Color;
+                    team2Color = t2Color;
+                    tournament = tName;
+                    scoreboardColor = sbColor;
+                    InvokeAsync(StateHasChanged);
+                });
+
+                await hubConnection.StartAsync();
+            }
+        }
     }
 
     private async Task UpdateScores()
@@ -181,6 +215,11 @@
     private async Task UpdateScore(int index, int valueUpDown)
     {
         scores[index] = scores[index] + valueUpDown;
+
+        using var context = DbFactory.CreateDbContext();
+
+        await SaveScoreChanges(scores);
+
         await UpdateScores();
     }
 
@@ -188,12 +227,18 @@
     {
         scores[index] = 0;
         scores[index + 1] = 0;
+
+        await SaveScoreChanges(scores);
+
         await UpdateScores();
     }
 
     private async Task ResetAllScores()
     {
         scores = new int[]{0,0,0,0,0,0};
+
+        await SaveScoreChanges(scores);
+
         await UpdateScores();
     }
 
@@ -221,6 +266,36 @@
     {
         scoreboardColor = e;
         InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SaveScoreChanges(int[] scores)
+    {
+        using var context = DbFactory.CreateDbContext();
+
+        if (context.Scoreboards != null)
+        {
+            var scoreboard = await context.Scoreboards
+                .FirstAsync<Scoreboard>(s => s.ScoreboardId == boardId);
+
+            var scoreArray = new ScoreArray(scores);
+            scoreboard.Scores = scoreArray.ToString();
+
+            await context.SaveChangesAsync();
+        }
+    }
+
+    private int getBoardIdFromSqid(string sqid)
+    {
+        if (sqids.Decode(sqid) is [var decodedId] && sqid == sqids.Encode(decodedId))
+        {
+            // `sqid` decodes into a single number and is canonical, here you can safely proceed with the rest of the logic
+            return 1;
+        }
+        else
+        {
+            // consider `sqid` invalid — e.g. respond with 404
+            return 1;
+        }
     }
 
     public bool IsConnected =>
