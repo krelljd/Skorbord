@@ -1,7 +1,7 @@
 @page "/board/{BoardSqid?}"
 
 @layout BasicLayout
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(false))
 @using Microsoft.AspNetCore.SignalR.Client
 @using Microsoft.EntityFrameworkCore
 @using Sqids
@@ -9,6 +9,7 @@
 @inject NavigationManager Navigation
 @inject SqidsEncoder<int> sqids
 @inject IDbContextFactory<Skorbord.Data.ScoreboardContext> DbFactory
+@inject ILogger<Score> Logger
 @implements IAsyncDisposable
 
 <PageTitle>Scoreboard</PageTitle>
@@ -75,27 +76,21 @@
     private string t2s2scoreClass = "score score-inactive";
     private string t1s3scoreClass = "score score-inactive";
     private string t2s3scoreClass = "score score-inactive";
-    private string team1 = "C757 15T Tsunami";
-    private string team2 = "Placeholder 15 National";
-    private string team1Color = "#2EB1C5";
-    private string team2Color = "#FFFFFF";
-    private string tournament = "Tournament";
-    private string scoreboardColor = "#D9D9D9";
-    
-
+    private string team1 = "";
+    private string team2 = "";
+    private string team1Color = "";
+    private string team2Color = "";
+    private string tournament = "";
+    private string scoreboardColor = "";
 
     protected override async Task OnInitializedAsync()
     {
-#if DEBUG
-var hubUrl = "https://skorbord.app/scorehub";
-#else
-        var hubUrl = Navigation.ToAbsoluteUri("/scorehub");
-#endif
+        //var hubUrl = "https://skorbord.app/scorehub";
+        var hubUrl = "http://localhost:8000/scorehub";
 
         hubConnection = new HubConnectionBuilder()
-        .WithUrl(hubUrl, options =>
-        {
-            //options.SkipNegotiation = true;
+        .WithUrl(hubUrl, o => {
+                o.DefaultTransferFormat = Microsoft.AspNetCore.Connections.TransferFormat.Binary;
         })
         .ConfigureLogging(logging =>
         {
@@ -105,9 +100,8 @@ var hubUrl = "https://skorbord.app/scorehub";
             // This will set ALL logging to Debug level
             logging.SetMinimumLevel(LogLevel.Debug);
         })
+        .AddJsonProtocol()
         .Build();
-
-        await base.OnInitializedAsync();
 
         // decode sqid
         var boardId = getBoardIdFromSqid(BoardSqid!);
@@ -119,52 +113,73 @@ var hubUrl = "https://skorbord.app/scorehub";
 
             if (context.Scoreboards != null)
             {
-                var scoreboard = await context.Scoreboards.AsNoTracking()
-                    .FirstAsync<Scoreboard>(s => s.ScoreboardId == boardId);
+                var scoreboard = await context.Scoreboards
+                                                .AsNoTracking()
+                                                .FirstAsync<Scoreboard>(s => s.ScoreboardId == boardId);
 
                 var scoreArray = new ScoreArray(scoreboard.Scores);
                 scores = scoreArray.Scores;
 
-                hubConnection.On<int[]>("UpdateScores", (scoreArray) =>
+                team1 = scoreboard.TeamName1;
+                team2 = scoreboard.TeamName2;
+                team1Color = scoreboard.TeamColor1;
+                team2Color = scoreboard.TeamColor2;
+                tournament = scoreboard.Tournament;
+                scoreboardColor = scoreboard.BoardColor;
+
+                updateScoreDisplay(scores);
+
+                hubConnection.On<int, int[]>("UpdateScores", (bId, s) =>
                 {
-                    scores = scoreArray;
+                    Logger.LogInformation(@"hubConnection.On 'UpdateScores' called");
+                    if (bId == boardId)
+                    {
+                        scores = s;
 
-                    var scoreDictionary = processScoreChanges(scoreArray);
-                    t1s1scoreClass = scoreDictionary[0];
-                    t2s1scoreClass = scoreDictionary[1];
-                    t1s2scoreClass = scoreDictionary[2];
-                    t2s2scoreClass = scoreDictionary[3];
-                    t1s3scoreClass = scoreDictionary[4];
-                    t2s3scoreClass = scoreDictionary[5];
-
-                    InvokeAsync(StateHasChanged);
+                        updateScoreDisplay(s);
+                        InvokeAsync(StateHasChanged);
+                    }
                 });
 
-                hubConnection.On<string, string, string, string, string, string>("UpdateMatchInfo", (t1, t1Color, t2, t2Color, tName,
-                sbColor) =>
+                hubConnection.On<int, string, string, string, string>("UpdateTeamInfo",
+                (bId, t1, t1c, t2, t2c) =>
                 {
-                    team1 = t1;
-                    team2 = t2;
-                    team1Color = t1Color;
-                    team2Color = t2Color;
-                    tournament = tName;
-                    scoreboardColor = sbColor;
-                    InvokeAsync(StateHasChanged);
+                    Logger.LogInformation(@"hubConnection.On 'UpdateTeamInfo' called");
+                    if (bId == boardId)
+                    {
+                        team1 = t1;
+                        team2 = t2;
+                        team1Color = t1c;
+                        team2Color = t2c;
+                        InvokeAsync(StateHasChanged);
+                    }
+                });
+
+                hubConnection.On<int, string, string>("UpdateDisplay",
+                (bId, trn, bc) =>
+                {
+                    Logger.LogInformation(@"hubConnection.On 'UpdateDisplay' called");
+                    if (bId == boardId)
+                    {
+                        tournament = trn;
+                        scoreboardColor = bc;
+                        InvokeAsync(StateHasChanged);
+                    }
                 });
 
                 await hubConnection.StartAsync();
             }
         }
+        await base.OnInitializedAsync();
     }
-    private Dictionary<int, string> processScoreChanges(int[] scores)
+
+    private void updateScoreDisplay(int[] scores)
     {
         var winningScore = 25;
         var isThirdSet = false;
         var scoreDictionary = scores.Select((score, index) => new { Index = index, Score = score })
-        .ToDictionary(x => x.Index, x => "score score-inactive");
+        .ToDictionary(x => x.Index, x => x.Index <= 1 ? "score" : "score score-inactive");
 
-        //always activate first set
-        activateNextSet(scoreDictionary, -1);
         //track winning scores to determine if the same team won both sets
         var winningScoreIndexes = new List<int> { };
         for (int i = 0; i < scores.Length - 1; i++)
@@ -173,7 +188,7 @@ var hubUrl = "https://skorbord.app/scorehub";
             if (i % 2 == 1) continue;
 
             //determine if this is the third set
-            isThirdSet = i >= 4;
+            isThirdSet = i is (int)SetOptions.Set3;
             //third set only goes to 15
             if (isThirdSet) winningScore = 15;
 
@@ -182,24 +197,38 @@ var hubUrl = "https://skorbord.app/scorehub";
                 int winnerIndex = scores[i] > scores[i + 1] ? i : i + 1;
                 winningScoreIndexes.Add(winnerIndex);
                 scoreDictionary[winnerIndex] = "score-winner";
-                //if there are 3 winning scores, do nothing
-                if (winningScoreIndexes.Count == 3) continue;
-                //don't show 3rd set scores if the same team won both sets
-                if (winningScoreIndexes.Count == 2)
-                {
-                    if (winningScoreIndexes[0] % 2 == winningScoreIndexes[1] % 2) continue;
-                }
-                activateNextSet(scoreDictionary, i + 1);
+
+                if (!isThirdSet) activateNextSet(winningScoreIndexes, scoreDictionary, i + 1);
+            }
+
+            t1s1scoreClass = scoreDictionary[0];
+            t2s1scoreClass = scoreDictionary[1];
+            t1s2scoreClass = scoreDictionary[2];
+            t2s2scoreClass = scoreDictionary[3];
+            t1s3scoreClass = scoreDictionary[4];
+            t2s3scoreClass = scoreDictionary[5];
+        }
+    }
+
+    private void activateNextSet(List<int> winningScoreIndexes, Dictionary<int, string> scoreDictionary, int currentIndex)
+    {
+        bool activateSet = true;
+        //don't show 3rd set scores if the same team won both sets
+        if (winningScoreIndexes.Count == 3) activateSet = false;
+
+        if (winningScoreIndexes.Count == 2)
+        {
+            if (winningScoreIndexes[0] % 2 == winningScoreIndexes[1] % 2)
+            {
+                activateSet = false;
             }
         }
 
-        return scoreDictionary;
-    }
-
-    private void activateNextSet(Dictionary<int, string> scoreDictionary, int currentIndex)
-    {
-        scoreDictionary[currentIndex + 1] = scoreDictionary[currentIndex + 1].Replace(" score-inactive", "");
-        scoreDictionary[currentIndex + 2] = scoreDictionary[currentIndex + 2].Replace(" score-inactive", "");
+        if (activateSet)
+        {
+            scoreDictionary[currentIndex + 1] = scoreDictionary[currentIndex + 1].Replace(" score-inactive", "");
+            scoreDictionary[currentIndex + 2] = scoreDictionary[currentIndex + 2].Replace(" score-inactive", "");
+        }
     }
 
     private int getBoardIdFromSqid(string sqid)
@@ -212,7 +241,7 @@ var hubUrl = "https://skorbord.app/scorehub";
         else
         {
             // consider `sqid` invalid — e.g. respond with 404
-            return 1;
+            return 0;
         }
     }
 

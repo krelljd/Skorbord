@@ -1,6 +1,6 @@
 @page "/score/{BoardSqid}"
 @layout BasicLayout
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(false))
 @using Microsoft.AspNetCore.SignalR.Client
 @using Microsoft.EntityFrameworkCore
 @using Sqids
@@ -8,57 +8,63 @@
 @inject NavigationManager Navigation
 @inject SqidsEncoder<int> sqids
 @inject IDbContextFactory<Skorbord.Data.ScoreboardContext> DbFactory
+@inject ILogger<Score> Logger
 @implements IAsyncDisposable
 
 <PageTitle>Score</PageTitle>
+
 <div class="score-content">
     <FluentStack Orientation="Orientation.Horizontal" Wrap="true">
         @team1
         <FluentStack Orientation="Orientation.Horizontal" Wrap="false">
             <FluentButton IconStart="@(new Icons.Regular.Size48.ArrowCircleDown())"
-                        OnClick="@(() => UpdateScore((int)CurrentSet, -1))" disabled="@(!IsConnected)"
+                        OnClick="@(() => UpdateScore((int)activeSet, -1))" disabled="@(!IsConnected)"
                         Appearance="Appearance.Neutral"
                         Class="score-button">
-            @scores[(int)CurrentSet]
+            @_scores[(int)activeSet]
             </FluentButton>
             <FluentButton IconStart="@(new Icons.Regular.Size48.ArrowCircleUp())"
-                        OnClick="@(() => UpdateScore((int)CurrentSet, 1))" disabled="@(!IsConnected)"
+                        OnClick="@(() => UpdateScore((int)activeSet, 1))" disabled="@(!IsConnected)"
                         Appearance="Appearance.Accent"
                         Class="score-button">
-            @scores[(int)CurrentSet]
+            @_scores[(int)activeSet]
             </FluentButton>
         </FluentStack>
         @team2
         <FluentStack Orientation="Orientation.Horizontal" Wrap="false">
             <FluentButton IconStart="@(new Icons.Regular.Size48.ArrowCircleDown())"
-                        OnClick="@(() => UpdateScore((int)CurrentSet + 1, -1))" disabled="@(!IsConnected)"
+                        OnClick="@(() => UpdateScore((int)activeSet + 1, -1))" disabled="@(!IsConnected)"
                         Appearance="Appearance.Neutral"
                         Class="score-button">
-            @scores[(int)CurrentSet + 1]
+            @_scores[(int)activeSet + 1]
             </FluentButton>
             <FluentButton IconStart="@(new Icons.Regular.Size48.ArrowCircleUp())"
-                        OnClick="@(() => UpdateScore((int)CurrentSet + 1, 1))" disabled="@(!IsConnected)"
+                        OnClick="@(() => UpdateScore((int)activeSet + 1, 1))" disabled="@(!IsConnected)"
                         Appearance="Appearance.Accent"
                         Class="score-button">
-            @scores[(int)CurrentSet + 1]
+            @_scores[(int)activeSet + 1]
             </FluentButton>
         </FluentStack>
     </FluentStack>
     <br>
     <FluentStack>
         <div style="width:100%">
-            Active Set<FluentListbox Items=@(Enum.GetValues<SetOptions>()) @bind-SelectedOption="@CurrentSet" />
+            Active Set
+            <FluentListbox TOption="SetOptions" 
+                           SelectedOptionChanged="ActiveSetChanged<SetOptions>" 
+                           Items=@(Enum.GetValues<SetOptions>())
+                           SelectedOption="@activeSet"/>
         </div>
     </FluentStack>
     <br>
     <FluentStack Orientation="Orientation.Horizontal" Wrap="false">
         <FluentButton IconStart="@(new Icons.Regular.Size24.DismissSquare())"
-                            OnClick="@(() => ResetSetScores((int)CurrentSet))" 
+                            OnClick="@(() => ResetSetScores((int)activeSet))" 
                             Disabled="@(!IsConnected)"
                             BackgroundColor="var(--error)"
                             Appearance="Appearance.Accent"
                             Class="reset-scores-button">
-        Reset @CurrentSet Scores
+        Reset @activeSet Scores
         </FluentButton>
         <FluentButton IconStart="@(new Icons.Regular.Size24.DismissSquare())"
                             OnClick="@(() => ResetAllScores())"
@@ -85,7 +91,7 @@
     </FluentStack>
     <br>
     <FluentButton IconStart="@(new Icons.Regular.Size24.Save())"
-                    OnClick="@(UpdateMatchInfo)" 
+                    OnClick="@(SaveMatchInfoClicked)"
                     Disabled="@(!IsConnected)"
                     Appearance="Appearance.Accent" 
                     Class="save-button">
@@ -99,18 +105,18 @@
             <br>
             <FluentIcon Value="@(new Icons.Regular.Size20.Edit())" Color="@Color.Neutral" Slot="start" />
             <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Center">
-                <input class="score-input" Size="2" @bind="@scores[0]"></input>
-                <input class="score-input" Size="2" @bind="@scores[2]"></input>
-                <input class="score-input" Size="2" @bind="@scores[4]"></input>
+                <input class="score-input" Size="2" @bind="@_scores[0]"></input>
+                <input class="score-input" Size="2" @bind="@_scores[2]"></input>
+                <input class="score-input" Size="2" @bind="@_scores[4]"></input>
             </FluentStack>
             <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Center">
-                <input class="score-input" Size="2" @bind="@scores[1]"></input>
-                <input class="score-input" Size="2" @bind="@scores[3]"></input>
-                <input class="score-input" Size="2" @bind="@scores[5]"></input>
+                <input class="score-input" Size="2" @bind="@_scores[1]"></input>
+                <input class="score-input" Size="2" @bind="@_scores[3]"></input>
+                <input class="score-input" Size="2" @bind="@_scores[5]"></input>
             </FluentStack>
             <br>
             <FluentButton IconStart="@(new Icons.Regular.Size24.Save())"
-                    OnClick="@(UpdateScores)" 
+                    OnClick="@(PublishScores)" 
                     Disabled="@(!IsConnected)"
                     Appearance="Appearance.Accent" 
                     Class="save-button">
@@ -125,33 +131,24 @@
 @code {
     private HubConnection? hubConnection;
     private List<string> messages = new List<string>();
-    private string? team1 = "C757 15T Tsunami";
-    private string? team2 = "Placeholder 15 National";
-    private string team1Color = "#2EB1C5";
-    private string team2Color = "#FFFFFF";
-    private string scoreboardColor = "#D9D9D9";
-    private string tournament = "Tournament";
-    private int[] scores = new int[]{0,0,0,0,0,0};
+    private string team1 = "";
+    private string team2 = "";
+    private string team1Color = "";
+    private string team2Color = "";
+    private string scoreboardColor = "";
+    private string tournament = "";
+    private int[] _scores = new int[]{0,0,0,0,0,0};
     private int boardId;
+    private SetOptions activeSet = SetOptions.Set1;
     private string boardUri = "#";
 
     [Parameter]
     public string? BoardSqid { get; set; }
 
-    public enum SetOptions {
-        Set1 = 0,
-        Set2 = 2,
-        Set3 = 4
-    };
-
-    private SetOptions CurrentSet;
     protected override async Task OnInitializedAsync()
     {
-        #if DEBUG
-            var hubUrl = "https://skorbord.app/scorehub";
-        #else
-            var hubUrl = Navigation.ToAbsoluteUri("/scorehub");
-        #endif
+        //var hubUrl = "https://skorbord.app/scorehub";
+        var hubUrl = Navigation.ToAbsoluteUri("/scorehub");
         hubConnection = new HubConnectionBuilder()
             .WithUrl(hubUrl)
             .ConfigureLogging(logging =>
@@ -179,96 +176,146 @@
                 var scoreboard = await context.Scoreboards.AsNoTracking()
                     .FirstAsync<Scoreboard>(s => s.ScoreboardId == boardId);
 
-                var scoreArray = new ScoreArray(scoreboard.Scores);
-                scores = scoreArray.Scores;
+                team1 = scoreboard.TeamName1;
+                team2 = scoreboard.TeamName2;
+                team1Color = scoreboard.TeamColor1;
+                team2Color = scoreboard.TeamColor2;
+                tournament = scoreboard.Tournament;
+                scoreboardColor = scoreboard.BoardColor;
+                activeSet = (SetOptions)scoreboard.ActiveSet;
+                _scores = new ScoreArray(scoreboard.Scores).Scores;
 
-                hubConnection.On<int[]>("UpdateScores", (scoreArray) =>
+                hubConnection.On<int, int[]>("UpdateScores", (bId, scores) =>
                 {
-                    scores = scoreArray;
-                    InvokeAsync(StateHasChanged);
+                    Logger.LogInformation(@"hubConnection.On 'UpdateScores' called");
+                    if (bId == boardId)
+                    {
+                        _scores = scores;
+                        InvokeAsync(StateHasChanged);
+                    }                    
                 });
 
-                hubConnection.On<string, string, string, string, string, string>("UpdateMatchInfo", (t1, t1Color, t2, t2Color, tName, sbColor) =>
+                hubConnection.On<int, string, string, string, string>("UpdateTeamInfo", 
+                                (bId, t1, t1c, t2, t2c) =>
                 {
-                    team1 = t1;
-                    team2 = t2;
-                    team1Color = t1Color;
-                    team2Color = t2Color;
-                    tournament = tName;
-                    scoreboardColor = sbColor;
-                    InvokeAsync(StateHasChanged);
+                    Logger.LogInformation(@"hubConnection.On 'UpdateTeamInfo' called");
+                    if (bId == boardId)
+                    {
+                        team1 = t1;
+                        team2 = t2;
+                        team1Color = t1c;
+                        team2Color = t2c;
+                        InvokeAsync(StateHasChanged);
+                    }
+                });
+
+                hubConnection.On<int, string, string>("UpdateDisplay", 
+                                (bId, trn, bc) =>
+                {
+                    Logger.LogInformation(@"hubConnection.On 'UpdateDisplay' called");
+                    if (bId == boardId)
+                    {
+                        tournament = trn;
+                        scoreboardColor = bc;
+                        InvokeAsync(StateHasChanged);
+                    }
+                });
+
+                hubConnection.On<int, int>("UpdateActiveSet", 
+                                (bId, set) =>
+                {
+                    Logger.LogInformation(@"hubConnection.On 'UpdateActiveSet' called");
+                    if (bId == boardId)
+                    {
+                        activeSet = (SetOptions)set;
+                        InvokeAsync(StateHasChanged);
+                    }
                 });
 
                 await hubConnection.StartAsync();
             }
         }
     }
-
-    private async Task UpdateScores()
+    private async Task PublishScores()
     {
         if (hubConnection is not null)
         {
-            await hubConnection.SendAsync("SendScoresMessage", scores);
+            await hubConnection.SendAsync("SendScoresMessage", boardId, _scores);
+        }
+    }
+
+    private async Task PublishTeamInfo()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.SendAsync("SendTeamInfoMessage", boardId, team1, team1Color, team2, team2Color);
+        }
+    }
+    private async Task PublishDisplayInfo()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.SendAsync("SendDisplayMessage", boardId, tournament, scoreboardColor);
+        }
+    }
+    private async Task PublishActiveSetInfo()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.SendAsync("SendActiveSetMessage", boardId, (int)activeSet);
         }
     }
 
     private async Task UpdateScore(int index, int valueUpDown)
     {
-        scores[index] = scores[index] + valueUpDown;
-
-        using var context = DbFactory.CreateDbContext();
-
-        await SaveScoreChanges(scores);
-
-        await UpdateScores();
+        _scores[index] = _scores[index] + valueUpDown;
+        await SaveScoreChanges();
     }
 
     private async Task ResetSetScores(int index)
     {
-        scores[index] = 0;
-        scores[index + 1] = 0;
+        _scores[index] = 0;
+        _scores[index + 1] = 0;
 
-        await SaveScoreChanges(scores);
-
-        await UpdateScores();
+        await SaveScoreChanges();
     }
 
     private async Task ResetAllScores()
     {
-        scores = new int[]{0,0,0,0,0,0};
+        _scores = new int[]{0,0,0,0,0,0};
 
-        await SaveScoreChanges(scores);
-
-        await UpdateScores();
-    }
-
-    private async Task UpdateMatchInfo()
-    {
-        if (hubConnection is not null)
-        {
-            await hubConnection.SendAsync("SendMatchInfoMessage", team1, team1Color, team2, team2Color, tournament, scoreboardColor);
-        }
+        await SaveScoreChanges();
     }
 
     private void Team1ColorChanged(string e)
     {  
         team1Color = e;
-        InvokeAsync(StateHasChanged);
     }
 
     private void Team2ColorChanged(string e)
     {
         team2Color = e;
-        InvokeAsync(StateHasChanged);
     }
 
     private void BoardColorChanged(string e)
     {
         scoreboardColor = e;
-        InvokeAsync(StateHasChanged);
+    }
+    private async void ActiveSetChanged<SetOptions>(Skorbord.Data.SetOptions e)
+    {
+        activeSet = e;
+        await SaveActiveSet();
+        await PublishActiveSetInfo();
     }
 
-    private async Task SaveScoreChanges(int[] scores)
+    private async Task SaveMatchInfoClicked()
+    {
+        await SaveBoardInfo();
+        await PublishDisplayInfo();
+        await PublishTeamInfo();
+    }
+
+    private async Task SaveScoreChanges()
     {
         using var context = DbFactory.CreateDbContext();
 
@@ -277,11 +324,48 @@
             var scoreboard = await context.Scoreboards
                 .FirstAsync<Scoreboard>(s => s.ScoreboardId == boardId);
 
-            var scoreArray = new ScoreArray(scores);
-            scoreboard.Scores = scoreArray.ToString();
+            scoreboard.Scores = new ScoreArray(_scores).ToString();
 
             await context.SaveChangesAsync();
         }
+        await PublishScores();
+    }
+
+    private async Task SaveBoardInfo()
+    {
+        using var context = DbFactory.CreateDbContext();
+
+        if (context.Scoreboards != null)
+        {
+            var scoreboard = await context.Scoreboards
+                .FirstAsync<Scoreboard>(s => s.ScoreboardId == boardId);
+
+            scoreboard.TeamName1 = team1;
+            scoreboard.TeamName2 = team2;
+            scoreboard.TeamColor1 = team1Color;
+            scoreboard.TeamColor2 = team2Color;
+            scoreboard.Tournament = tournament;
+            scoreboard.BoardColor = scoreboardColor;
+
+            await context.SaveChangesAsync();
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SaveActiveSet()
+    {
+        using var context = DbFactory.CreateDbContext();
+
+        if (context.Scoreboards != null)
+        {
+            var scoreboard = await context.Scoreboards
+                .FirstAsync<Scoreboard>(s => s.ScoreboardId == boardId);
+
+            scoreboard.ActiveSet = (int)activeSet;
+
+            await context.SaveChangesAsync();
+        }
+        await InvokeAsync(StateHasChanged);
     }
 
     private int getBoardIdFromSqid(string sqid)
@@ -294,7 +378,7 @@
         else
         {
             // consider `sqid` invalid — e.g. respond with 404
-            return 1;
+            return 0;
         }
     }
 

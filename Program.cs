@@ -27,7 +27,10 @@ builder.Services.AddCors(options => {
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
+    .AddInteractiveServerComponents(o => 
+    {
+        o.DetailedErrors = true;
+    });
 
 builder.Services.AddResponseCompression(opts => 
 {
@@ -42,7 +45,6 @@ builder.Services.AddSingleton(new SqidsEncoder<int>(new()
     MinLength = 6,
 }));
 
-Console.WriteLine($"Sqlite::Data Source={ScoreboardContext.ScoreboardsDb}.db");
 builder.Services.AddDbContextFactory<ScoreboardContext>(opt =>
     opt.UseSqlite($"Data Source={ScoreboardContext.ScoreboardsDb}.db"));
 
@@ -68,7 +70,8 @@ app.UseAntiforgery();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
-app.MapHub<ScoreHub>("/scorehub");
 
+//app.Services.GetRequiredService<ILoggerFactory>().CreateLogger<Program>();
+app.MapHub<ScoreHub>("/scorehub");
 
 app.Run();
