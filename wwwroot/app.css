@@ -61,6 +61,7 @@ h1:focus {
 
 .score-content {
     padding: 2px;
+    font-size: 1.3rem;
 }
 
 .reset-scores-button {
@@ -71,9 +72,14 @@ h1:focus {
     width: 50%;
     height: 15vh;
     font-size: 1.5rem;
+    background-color: #4296DB;
 }
 
 .save-button {
+    width: 100%;
+}
+
+.score-button-container {
     width: 100%;
 }
 

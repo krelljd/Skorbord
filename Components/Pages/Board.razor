@@ -13,22 +13,21 @@
 @implements IAsyncDisposable
 
 <PageTitle>Scoreboard</PageTitle>
-
 <div class="matte">
     <div class="scoreboard" style="background: @scoreboardColor;">
         <div class="teams">
             <div class="scoring">
-                <div class="set-box-1">
+                <div class="@setbox1Class">
                     <div class="@t1s1scoreClass">
                         @scores[0]
                     </div>
                 </div>
-                <div class="set-box-2">
+                <div class="@setbox2Class">
                     <div class="@t1s2scoreClass">
                         @scores[2]
                     </div>
                 </div>
-                <div class="set-box-3">
+                <div class="@setbox3Class">
                     <div class="@t1s3scoreClass">
                         @scores[4]
                     </div>
@@ -41,17 +40,17 @@
     <div class="scoreboard" style="background: @scoreboardColor;">
         <div class="teams">
             <div class="scoring">
-                <div class="set-box-1">
+                <div class="@setbox1Class">
                     <div class="@t2s1scoreClass">
                         @scores[1]
                     </div>
                 </div>
-                <div class="set-box-2">
+                <div class="@setbox2Class">
                     <div class="@t2s2scoreClass">
                         @scores[3]
                     </div>
                 </div>
-                <div class="set-box-3">
+                <div class="@setbox3Class">
                     <div class="@t2s3scoreClass">
                         @scores[5]
                     </div>
@@ -62,6 +61,7 @@
         </div>
     </div>
 </div>
+<div class="tournament">@tournament</div>
 @code {
     private HubConnection? hubConnection;
     public bool IsConnected => hubConnection?.State == HubConnectionState.Connected;
@@ -82,16 +82,19 @@
     private string team2Color = "";
     private string tournament = "";
     private string scoreboardColor = "";
+    private string setbox1Class = "set-box active";
+    private string setbox2Class = "set-box";
+    private string setbox3Class = "set-box";
+    private SetOptions activeSet = SetOptions.Set1;
+
 
     protected override async Task OnInitializedAsync()
     {
-        //var hubUrl = "https://skorbord.app/scorehub";
-        var hubUrl = "http://localhost:8000/scorehub";
+        var hubUrl = "https://skorbord.app/scorehub";        
+        //var hubUrl = "http://localhost:8000/scorehub";
 
         hubConnection = new HubConnectionBuilder()
-        .WithUrl(hubUrl, o => {
-                o.DefaultTransferFormat = Microsoft.AspNetCore.Connections.TransferFormat.Binary;
-        })
+        .WithUrl(hubUrl)
         .ConfigureLogging(logging =>
         {
             // Log to the Console
@@ -100,7 +103,6 @@
             // This will set ALL logging to Debug level
             logging.SetMinimumLevel(LogLevel.Debug);
         })
-        .AddJsonProtocol()
         .Build();
 
         // decode sqid
@@ -126,6 +128,7 @@
                 team2Color = scoreboard.TeamColor2;
                 tournament = scoreboard.Tournament;
                 scoreboardColor = scoreboard.BoardColor;
+                activeSet = activeSet = (SetOptions)scoreboard.ActiveSet;
 
                 updateScoreDisplay(scores);
 
@@ -163,6 +166,18 @@
                     {
                         tournament = trn;
                         scoreboardColor = bc;
+                        InvokeAsync(StateHasChanged);
+                    }
+                });
+
+                hubConnection.On<int, int>("UpdateActiveSet", 
+                                (bId, set) =>
+                {
+                    Logger.LogInformation(@"hubConnection.On 'UpdateActiveSet' called");
+                    if (bId == boardId)
+                    {
+                        activeSet = (SetOptions)set;
+                        setActiveScoreBox();
                         InvokeAsync(StateHasChanged);
                     }
                 });
@@ -207,6 +222,8 @@
             t2s2scoreClass = scoreDictionary[3];
             t1s3scoreClass = scoreDictionary[4];
             t2s3scoreClass = scoreDictionary[5];
+
+            setActiveScoreBox();
         }
     }
 
@@ -226,8 +243,26 @@
 
         if (activateSet)
         {
+            //show the next set's scores
             scoreDictionary[currentIndex + 1] = scoreDictionary[currentIndex + 1].Replace(" score-inactive", "");
             scoreDictionary[currentIndex + 2] = scoreDictionary[currentIndex + 2].Replace(" score-inactive", "");
+        }
+    }
+
+    private void setActiveScoreBox()
+    {
+        setbox1Class = setbox2Class = setbox3Class = "set-box";
+        switch (activeSet)
+        {
+            case SetOptions.Set1:
+                setbox1Class += " active";
+                return;
+            case SetOptions.Set2:
+                setbox2Class += " active";
+                return;
+            case SetOptions.Set3:
+                setbox3Class += " active";
+                return;
         }
     }
 

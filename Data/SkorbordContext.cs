@@ -7,7 +7,7 @@ namespace Skorbord.Data;
 public class ScoreboardContext : DbContext
 {
     // Magic strings.
-    public static readonly string ScoreboardsDb = "data/scoreboard";
+    public static readonly string ScoreboardsDb = "scoreboard";
 
     // Inject options.
     // options: The DbContextOptions{ScoreboardContext} for the context.

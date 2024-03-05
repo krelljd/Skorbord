@@ -46,7 +46,7 @@ builder.Services.AddSingleton(new SqidsEncoder<int>(new()
 }));
 
 builder.Services.AddDbContextFactory<ScoreboardContext>(opt =>
-    opt.UseSqlite($"Data Source={ScoreboardContext.ScoreboardsDb}.db"));
+    opt.UseSqlite($"Data Source=scoreboard.db"));
 
 builder.Services.AddFluentUIComponents();
 

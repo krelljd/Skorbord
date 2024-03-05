@@ -1,6 +1,24 @@
+html,
+body {
+    font-family: 'Saira', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 1rem;
+    background: transparent;
+}
+
+.tournament {
+    font-size: .6rem;
+    text-align: center;
+    background: #000000;
+    color: white;
+    width: 100%;
+    height: 16px;
+    line-height: 15px;
+    border-bottom: 2px #000000 solid;
+}
+
 .matte {
     width: 100%;
-    height: 104px;
+    height: 54px;
     background: #000000;
     border-top: 2px black solid;
     border-bottom: 2px black solid;
@@ -8,8 +26,8 @@
 
 .scoreboard {
     width: 100%;
-    height: 50px;
-    line-height: 50px;
+    height: 25px;
+    line-height: 25px;
 }
 
 .teams {
@@ -25,8 +43,8 @@
 }
 
 .team-name {
-    height: 50px;
-    left: 2vw;
+    height: 25px;
+    left: calc(2vw + 4px);
     position: absolute;
     color: black;
 }
@@ -34,7 +52,8 @@
 .team-color-1 {
     color: black;
     width: 1.5vw;
-    height: 50px;
+    min-width: 12px;
+    height: 25px;
     left: 0px;
     position: absolute;
     border-left: 2px black solid;
@@ -45,7 +64,8 @@
 .team-color-2 {
     color: black;
     width: 1.5vw;
-    height: 50px;
+    min-width: 12px;
+    height: 25px;
     left: 0px;
     position: absolute;
     border-left: 2px black solid;
@@ -53,23 +73,17 @@
     border-top: 1px black solid;
 }
 
-.set-box-1,
-.set-box-2 {
+.set-box {
     width: 10vw;
-    height: 50px;
-    background: #2eb1c5;
+    height: 25px;
+    background: #557086;
     border-left: 2px black solid;
     border-right: 2px black solid;
     margin-left: 2px;
 }
 
-.set-box-3 {
-    width: 10vw;
-    height: 50px;
-    background: #2eb1c54f;
-    border-left: 2px black solid;
-    border-right: 2px black solid;
-    margin-left: 2px;
+.set-box.active {
+    background: #4296DB;
 }
 
 .score-winner {
