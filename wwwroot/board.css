@@ -52,7 +52,7 @@ body {
 .team-color-1 {
     color: black;
     width: 1.5vw;
-    min-width: 12px;
+    min-width: 16px;
     height: 25px;
     left: 0px;
     position: absolute;
@@ -64,7 +64,7 @@ body {
 .team-color-2 {
     color: black;
     width: 1.5vw;
-    min-width: 12px;
+    min-width: 16px;
     height: 25px;
     left: 0px;
     position: absolute;
