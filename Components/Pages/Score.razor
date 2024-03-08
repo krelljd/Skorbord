@@ -46,17 +46,17 @@
 	<br>
 	Active Set
 	<FluentStack Orientation="Orientation.Horizontal" Wrap="false">
-		<FluentButton IconStart="@(new Icons.Regular.Size24.Flag())"
+		<FluentButton IconStart="@(new Icons.Regular.Size32.Flag())"
 					  OnClick="@(e => ActiveSetClicked(SetOptions.Set1))" Disabled="@(!IsConnected)"
 					  Appearance="@(activeSet == SetOptions.Set1 ? Appearance.Accent : Appearance.Neutral)" 
 					  Class="set-button" Loading="@buttonLoading">Set 1
 		</FluentButton>
-		<FluentButton IconStart="@(new Icons.Regular.Size24.Flag())"
+		<FluentButton IconStart="@(new Icons.Regular.Size32.Flag())"
 					  OnClick="@(() => ActiveSetClicked(SetOptions.Set2))" Disabled="@(!IsConnected)"
 					  Appearance="@(activeSet == SetOptions.Set2 ? Appearance.Accent : Appearance.Neutral)"
 					  Class="set-button" Loading="@buttonLoading">Set 2
 		</FluentButton>
-		<FluentButton IconStart="@(new Icons.Regular.Size24.FlagClock())"
+		<FluentButton IconStart="@(new Icons.Regular.Size32.FlagClock())"
 					  OnClick="@(() => ActiveSetClicked(SetOptions.Set3))" Disabled="@(!IsConnected)"
 					  Appearance="@(activeSet == SetOptions.Set3 ? Appearance.Accent : Appearance.Stealth)"
 					  Class="set-button" Loading="@buttonLoading">Set 3
