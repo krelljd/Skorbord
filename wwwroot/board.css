@@ -31,7 +31,6 @@ body {
 }
 
 .teams {
-    /* width: 100%; */
     position: relative;
 }
 
@@ -44,15 +43,14 @@ body {
 
 .team-name {
     height: 25px;
-    left: calc(2vw + 4px);
+    left: 18px;
     position: absolute;
     color: black;
 }
 
 .team-color-1 {
     color: black;
-    width: 1.5vw;
-    min-width: 16px;
+    width: 16px;
     height: 25px;
     left: 0px;
     position: absolute;
@@ -63,8 +61,7 @@ body {
 
 .team-color-2 {
     color: black;
-    width: 1.5vw;
-    min-width: 16px;
+    width: 16px;
     height: 25px;
     left: 0px;
     position: absolute;

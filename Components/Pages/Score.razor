@@ -12,385 +12,397 @@
 @implements IAsyncDisposable
 
 <PageTitle>Skorbord.app</PageTitle>
+<FluentDesignTheme Mode="DesignThemeModes.Light" CustomColor="#557086" />
 
 <div class="score-content">
-    <FluentStack Orientation="Orientation.Horizontal" Wrap="true">
-        @team1
-        <FluentDesignSystemProvider AccentBaseColor="@team1Color" NeutralBaseColor="#EDEDED" Style="width:100%">
-            <FluentStack Orientation="Orientation.Horizontal" Wrap="false">
-                <FluentButton IconStart="@(new Icons.Regular.Size48.ArrowCircleDown())"
-                    OnClick="@(() => UpdateScore((int)activeSet, -1))" Disabled="@(!IsConnected)"
-                    Appearance="Appearance.Neutral" Class="score-button" Loading="@buttonLoading">
-                    @_scores[(int)activeSet]
-                </FluentButton>
-                <FluentButton IconStart="@(new Icons.Regular.Size48.ArrowCircleUp())"
-                    OnClick="@(() => UpdateScore((int)activeSet, 1))" Disabled="@(!IsConnected)"
-                    Appearance="Appearance.Accent" Class="score-button" Loading="@buttonLoading">
-                    @_scores[(int)activeSet]
-                </FluentButton>
-            </FluentStack>
-        </FluentDesignSystemProvider>
-        @team2
-        <FluentDesignSystemProvider AccentBaseColor="@team2Color" NeutralBaseColor="#EDEDED" Style="width:100%">
-            <FluentStack Orientation="Orientation.Horizontal" Wrap="false">
-                <FluentButton IconStart="@(new Icons.Regular.Size48.ArrowCircleDown())"
-                    OnClick="@(() => UpdateScore((int)activeSet + 1, -1))" Disabled="@(!IsConnected)"
-                    Appearance="Appearance.Neutral" Loading="@buttonLoading" Class="score-button">
-                    @_scores[(int)activeSet + 1]
-                </FluentButton>
-                <FluentButton IconStart="@(new Icons.Regular.Size48.ArrowCircleUp())"
-                    OnClick="@(() => UpdateScore((int)activeSet + 1, 1))" Disabled="@(!IsConnected)"
-                    Appearance="Appearance.Accent" Loading="@buttonLoading" Class="score-button">
-                    @_scores[(int)activeSet + 1]
-                </FluentButton>
-            </FluentStack>
-        </FluentDesignSystemProvider>
-    </FluentStack>
-    <br>
-    <FluentStack>
-        <div style="width:100%">
-            Active Set
-            <FluentListbox TOption="SetOptions" SelectedOptionChanged="ActiveSetChanged<SetOptions>"
-                Items=@(Enum.GetValues<SetOptions>()) SelectedOption="@activeSet" />
-        </div>
-    </FluentStack>
-    <br>
-    <FluentStack Orientation="Orientation.Horizontal" Wrap="false">
-        <FluentButton IconStart="@(new Icons.Regular.Size24.DismissSquare())"
-            OnClick="@(() => ResetSetScores((int)activeSet))" Disabled="@(!IsConnected)" BackgroundColor="var(--error)"
-            Appearance="Appearance.Accent" Loading="@buttonLoading" Class="reset-scores-button">
-            Reset @activeSet Scores
-        </FluentButton>
-        <FluentButton IconStart="@(new Icons.Regular.Size24.DismissSquare())" OnClick="@(() => ResetAllScores())"
-            Disabled="@(!IsConnected)" BackgroundColor="var(--error)" Appearance="Appearance.Accent"
-            Loading="@buttonLoading" Class="reset-scores-button">
-            Reset Match Scores
-        </FluentButton>
-    </FluentStack>
-    <hr>
-    Administration
-    <FluentStack Orientation="Orientation.Horizontal">
-        <FluentTextField @bind-Value="@team1" Class="team-name-input" Placeholder="Team 1 Name" AutoComplete="off">
-        </FluentTextField>
-        <ColorSelector CurrentColor="@team1Color" ReturnedColor="Team1ColorChanged" Style="width: 20vw;">
-        </ColorSelector>
-    </FluentStack>
-    <FluentStack Orientation="Orientation.Horizontal">
-        <FluentTextField @bind-Value="@team2" Class="team-name-input" Placeholder="Team 2 Name" AutoComplete="off">
-        </FluentTextField>
-        <ColorSelector CurrentColor="@team2Color" ReturnedColor="Team2ColorChanged" Style="width: 20vw;">
-        </ColorSelector>
-    </FluentStack>
-    <FluentStack Orientation="Orientation.Horizontal">
-        <FluentTextField @bind-Value="@tournament" Class="team-name-input" Placeholder="Tournament Name"
-            AutoComplete="off"></FluentTextField>
-        <ColorSelector CurrentColor="@scoreboardColor" ReturnedColor="BoardColorChanged" Style="width: 20vw;">
-        </ColorSelector>
-    </FluentStack>
-    <br>
-    <FluentButton IconStart="@(new Icons.Regular.Size24.Save())" OnClick="@(SaveMatchInfoClicked)"
-        Disabled="@(!IsConnected)" Appearance="Appearance.Accent" Loading="@buttonLoading" Class="save-button">
-        Save Match Info
-    </FluentButton>
-    <br>
-    <hr>
-    <FluentAccordion>
-        <FluentAccordionItem Heading="Advanced Settings" HeadingLevel="1">
-            <FluentLabel Alignment="HorizontalAlignment.Center">Board: <a href="@boardUri" target="_blank">@boardUri</a>
-            </FluentLabel>
-            <br>
-            <FluentIcon Value="@(new Icons.Regular.Size20.Edit())" Color="@Color.Neutral" Slot="start" />
-            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Center">
-                <input class="score-input" Size="2" @bind="@_scores[0]"></input>
-                <input class="score-input" Size="2" @bind="@_scores[2]"></input>
-                <input class="score-input" Size="2" @bind="@_scores[4]"></input>
-            </FluentStack>
-            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Center">
-                <input class="score-input" Size="2" @bind="@_scores[1]"></input>
-                <input class="score-input" Size="2" @bind="@_scores[3]"></input>
-                <input class="score-input" Size="2" @bind="@_scores[5]"></input>
-            </FluentStack>
-            <br>
-            <FluentButton IconStart="@(new Icons.Regular.Size24.Save())" OnClick="@(PublishScores)"
-                Disabled="@(!IsConnected)" Appearance="Appearance.Accent" Class="save-button" Loading="@buttonLoading">
-                Save Scores
-            </FluentButton>
-        </FluentAccordionItem>
-    </FluentAccordion>
-    <br>
-    <br>
+	<FluentStack Orientation="Orientation.Horizontal" Wrap="true">
+		@team1
+		<FluentStack Orientation="Orientation.Horizontal" Wrap="false">
+			<FluentButton IconStart="@(new Icons.Regular.Size48.ArrowCircleDown())"
+						  OnClick="@(() => UpdateScore((int)activeSet, -1))" Disabled="@(!IsConnected)"
+						  Appearance="Appearance.Neutral" Class="score-button" Loading="@buttonLoading">
+				@_scores[(int)activeSet]
+			</FluentButton>
+			<FluentButton IconStart="@(new Icons.Regular.Size48.ArrowCircleUp())"
+						  OnClick="@(() => UpdateScore((int)activeSet, 1))" Disabled="@(!IsConnected)"
+						  Appearance="Appearance.Accent" Class="score-button" Loading="@buttonLoading">
+				@_scores[(int)activeSet]
+			</FluentButton>
+		</FluentStack>
+		@team2
+		<FluentStack Orientation="Orientation.Horizontal" Wrap="false">
+			<FluentButton IconStart="@(new Icons.Regular.Size48.ArrowCircleDown())"
+						  OnClick="@(() => UpdateScore((int)activeSet + 1, -1))" Disabled="@(!IsConnected)"
+						  Appearance="Appearance.Neutral" Class="score-button" Loading="@buttonLoading">
+				@_scores[(int)activeSet + 1]
+			</FluentButton>
+			<FluentButton IconStart="@(new Icons.Regular.Size48.ArrowCircleUp())"
+						  OnClick="@(() => UpdateScore((int)activeSet + 1, 1))" Disabled="@(!IsConnected)"
+						  Appearance="Appearance.Accent" Class="score-button" Loading="@buttonLoading">
+				@_scores[(int)activeSet + 1]
+			</FluentButton>
+		</FluentStack>
+	</FluentStack>
+	<br>
+	Active Set
+	<FluentStack Orientation="Orientation.Horizontal" Wrap="false">
+		<FluentButton IconStart="@(new Icons.Regular.Size48.Flag())"
+					  OnClick="@(e => ActiveSetClicked(SetOptions.Set1))" Disabled="@(!IsConnected)"
+					  Appearance="@(activeSet == SetOptions.Set1 ? Appearance.Accent : Appearance.Neutral)" 
+					  Class="set-button" Loading="@buttonLoading">Set 1
+		</FluentButton>
+		<FluentButton IconStart="@(new Icons.Regular.Size48.Flag())"
+					  OnClick="@(() => ActiveSetClicked(SetOptions.Set2))" Disabled="@(!IsConnected)"
+					  Appearance="@(activeSet == SetOptions.Set2 ? Appearance.Accent : Appearance.Neutral)"
+					  Class="set-button" Loading="@buttonLoading">Set 2
+		</FluentButton>
+		<FluentButton IconStart="@(new Icons.Regular.Size48.FlagClock())"
+					  OnClick="@(() => ActiveSetClicked(SetOptions.Set3))" Disabled="@(!IsConnected)"
+					  Appearance="@(activeSet == SetOptions.Set3 ? Appearance.Accent : Appearance.Stealth)"
+					  Class="set-button" Loading="@buttonLoading">Set 3
+		</FluentButton>
+	</FluentStack>
+	<br />
+	<FluentStack Orientation="Orientation.Horizontal" Wrap="false">
+		<FluentButton IconStart="@(new Icons.Regular.Size24.DismissSquare())"
+					  OnClick="@(() => ResetSetScores((int)activeSet))" Disabled="@(!IsConnected)" BackgroundColor="var(--error)"
+					  Appearance="Appearance.Accent" Loading="@buttonLoading" Class="reset-scores-button">
+			Reset @activeSet Scores
+		</FluentButton>
+		<FluentButton IconStart="@(new Icons.Regular.Size24.DismissSquare())" OnClick="@(() => ResetAllScores())"
+					  Disabled="@(!IsConnected)" BackgroundColor="var(--error)" Appearance="Appearance.Accent"
+					  Loading="@buttonLoading" Class="reset-scores-button">
+			Reset Match Scores
+		</FluentButton>
+	</FluentStack>
+	<hr>
+	Administration
+	<FluentStack Orientation="Orientation.Horizontal">
+		<FluentTextField @bind-Value="@team1" Class="team-name-input" Placeholder="Team 1 Name" AutoComplete="off">
+		</FluentTextField>
+		<ColorSelector CurrentColor="@team1Color" ReturnedColor="Team1ColorChanged" Style="width: 20vw;">
+		</ColorSelector>
+	</FluentStack>
+	<FluentStack Orientation="Orientation.Horizontal">
+		<FluentTextField @bind-Value="@team2" Class="team-name-input" Placeholder="Team 2 Name" AutoComplete="off">
+		</FluentTextField>
+		<ColorSelector CurrentColor="@team2Color" ReturnedColor="Team2ColorChanged" Style="width: 20vw;">
+		</ColorSelector>
+	</FluentStack>
+	<FluentStack Orientation="Orientation.Horizontal">
+		<FluentTextField @bind-Value="@tournament" Class="team-name-input" Placeholder="Tournament Name"
+						 AutoComplete="off"></FluentTextField>
+		<ColorSelector CurrentColor="@scoreboardColor" ReturnedColor="BoardColorChanged" Style="width: 20vw;">
+		</ColorSelector>
+	</FluentStack>
+	<br>
+	<FluentButton IconStart="@(new Icons.Regular.Size24.Save())" OnClick="@(SaveMatchInfoClicked)"
+				  Disabled="@(!IsConnected)" Appearance="Appearance.Accent" Loading="@buttonLoading" Class="save-button">
+		Save Match Info
+	</FluentButton>
+	<br>
+	<hr>
+	<FluentAccordion>
+		<FluentAccordionItem Heading="Advanced Settings" HeadingLevel="1">
+			<FluentLabel Alignment="HorizontalAlignment.Center">
+				Board: <a href="@boardUri" target="_blank">@boardUri</a>
+			</FluentLabel>
+			<br>
+			<FluentIcon Value="@(new Icons.Regular.Size20.Edit())" Color="@Color.Neutral" Slot="start" />
+			<FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Center">
+				<input class="score-input" Size="2" @bind="@_scores[0]"></input>
+				<input class="score-input" Size="2" @bind="@_scores[2]"></input>
+				<input class="score-input" Size="2" @bind="@_scores[4]"></input>
+			</FluentStack>
+			<FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Center">
+				<input class="score-input" Size="2" @bind="@_scores[1]"></input>
+				<input class="score-input" Size="2" @bind="@_scores[3]"></input>
+				<input class="score-input" Size="2" @bind="@_scores[5]"></input>
+			</FluentStack>
+			<br>
+			<FluentButton IconStart="@(new Icons.Regular.Size24.Save())" OnClick="@(PublishScores)"
+						  Disabled="@(!IsConnected)" Appearance="Appearance.Accent" Class="save-button" Loading="@buttonLoading">
+				Save Scores
+			</FluentButton>
+		</FluentAccordionItem>
+	</FluentAccordion>
+	<br>
+	<br>
 </div>
 
 @code {
-    private HubConnection? hubConnection;
-    private List<string> messages = new List<string>();
-    private string team1 = "";
-    private string team2 = "";
-    private string team1Color = "";
-    private string team2Color = "";
-    private string scoreboardColor = "";
-    private string tournament = "";
-    private int[] _scores = new int[] { 0, 0, 0, 0, 0, 0 };
-    private int boardId;
-    private SetOptions activeSet = SetOptions.Set1;
-    private string boardUri = "#";
-    private bool buttonLoading = false;
+	private HubConnection? hubConnection;
+	private List<string> messages = new List<string>();
+	public string team1 = "";
+	public string team2 = "";
+	public string team1Color = "";
+	public string team2Color = "";
+	public string scoreboardColor = "";
+	public string tournament = "";
+	private int[] _scores = new int[] { 0, 0, 0, 0, 0, 0 };
+	private int boardId;
+	private SetOptions activeSet = SetOptions.Set1;
+	private string boardUri = "#";
+	private bool buttonLoading = false;
 
-    [Parameter]
-    public string? BoardSqid { get; set; }
+	[Parameter]
+	public string? BoardSqid { get; set; }
 
-    protected override async Task OnInitializedAsync()
-    {
-        var hubUrl = "https://skorbord.app/scorehub";
-        //var hubUrl = "http://localhost:8000/scorehub";
+	protected override async Task OnInitializedAsync()
+	{
+		var hubUrl = "https://skorbord.app/scorehub";
+		//var hubUrl = "http://localhost:8000/scorehub";
 
-        hubConnection = new HubConnectionBuilder()
-        .WithUrl(hubUrl)
-        .ConfigureLogging(logging =>
-        {
-            // Log to the Console
-            logging.AddConsole();
+		hubConnection = new HubConnectionBuilder()
+		.WithUrl(hubUrl)
+		.ConfigureLogging(logging =>
+		{
+			// Log to the Console
+			logging.AddConsole();
 
-            // This will set ALL logging to Debug level
-            logging.SetMinimumLevel(LogLevel.Debug);
-        })
-        .Build();
+			// This will set ALL logging to Debug level
+			logging.SetMinimumLevel(LogLevel.Debug);
+		})
+		.Build();
 
-        // decode sqid
-        boardId = getBoardIdFromSqid(BoardSqid!);
-        var boardSqid = sqids.Encode(boardId);
-        boardUri = "/board/" + @boardSqid;
+		// decode sqid
+		boardId = getBoardIdFromSqid(BoardSqid!);
+		var boardSqid = sqids.Encode(boardId);
+		boardUri = "/board/" + @boardSqid;
 
-        if (boardId > 0)
-        {
-            //retrieve data
-            using var context = DbFactory.CreateDbContext();
+		if (boardId > 0)
+		{
+			//retrieve data
+			using var context = DbFactory.CreateDbContext();
 
-            if (context.Scoreboards != null)
-            {
-                var scoreboard = await context.Scoreboards.AsNoTracking()
-                .FirstAsync<Scoreboard>(s => s.ScoreboardId == boardId);
+			if (context.Scoreboards != null)
+			{
+				var scoreboard = await context.Scoreboards.AsNoTracking()
+				.FirstAsync<Scoreboard>(s => s.ScoreboardId == boardId);
 
-                team1 = scoreboard.TeamName1;
-                team2 = scoreboard.TeamName2;
-                team1Color = scoreboard.TeamColor1;
-                team2Color = scoreboard.TeamColor2;
-                tournament = scoreboard.Tournament.ToUpperInvariant();
-                scoreboardColor = scoreboard.BoardColor;
-                activeSet = (SetOptions)scoreboard.ActiveSet;
-                _scores = new ScoreArray(scoreboard.Scores).Scores;
+				team1 = scoreboard.TeamName1;
+				team2 = scoreboard.TeamName2;
+				team1Color = scoreboard.TeamColor1;
+				team2Color = scoreboard.TeamColor2;
+				tournament = scoreboard.Tournament.ToUpperInvariant();
+				scoreboardColor = scoreboard.BoardColor;
+				activeSet = (SetOptions)scoreboard.ActiveSet;
+				_scores = new ScoreArray(scoreboard.Scores).Scores;
 
-                hubConnection.On<int, int[]>("UpdateScores", (bId, scores) =>
-                {
-                    Logger.LogInformation(@"hubConnection.On 'UpdateScores' called");
-                    if (bId == boardId)
-                    {
-                        _scores = scores;
-                        InvokeAsync(StateHasChanged);
-                    }
-                });
+				hubConnection.On<int, int[]>("UpdateScores", (bId, scores) =>
+				{
+					Logger.LogInformation(@"hubConnection.On 'UpdateScores' called");
+					if (bId == boardId)
+					{
+						_scores = scores;
+						InvokeAsync(StateHasChanged);
+					}
+				});
 
-                hubConnection.On<int, string, string, string, string>("UpdateTeamInfo",
-                (bId, t1, t1c, t2, t2c) =>
-                {
-                    Logger.LogInformation(@"hubConnection.On 'UpdateTeamInfo' called");
-                    if (bId == boardId)
-                    {
-                        team1 = t1;
-                        team2 = t2;
-                        team1Color = t1c;
-                        team2Color = t2c;
-                        InvokeAsync(StateHasChanged);
-                    }
-                });
+				hubConnection.On<int, string, string, string, string>("UpdateTeamInfo",
+				(bId, t1, t1c, t2, t2c) =>
+				{
+					Logger.LogInformation(@"hubConnection.On 'UpdateTeamInfo' called");
+					if (bId == boardId)
+					{
+						team1 = t1;
+						team2 = t2;
+						team1Color = t1c;
+						team2Color = t2c;
+						InvokeAsync(StateHasChanged);
+					}
+				});
 
-                hubConnection.On<int, string, string>("UpdateDisplay",
-                (bId, trn, bc) =>
-                {
-                    Logger.LogInformation(@"hubConnection.On 'UpdateDisplay' called");
-                    if (bId == boardId)
-                    {
-                        tournament = trn.ToUpperInvariant();
-                        scoreboardColor = bc;
-                        InvokeAsync(StateHasChanged);
-                    }
-                });
+				hubConnection.On<int, string, string>("UpdateDisplay",
+				(bId, trn, bc) =>
+				{
+					Logger.LogInformation(@"hubConnection.On 'UpdateDisplay' called");
+					if (bId == boardId)
+					{
+						tournament = trn.ToUpperInvariant();
+						scoreboardColor = bc;
+						InvokeAsync(StateHasChanged);
+					}
+				});
 
-                hubConnection.On<int, int>("UpdateActiveSet",
-                (bId, set) =>
-                {
-                    Logger.LogInformation(@"hubConnection.On 'UpdateActiveSet' called");
-                    if (bId == boardId)
-                    {
-                        activeSet = (SetOptions)set;
-                        InvokeAsync(StateHasChanged);
-                    }
-                });
+				hubConnection.On<int, int>("UpdateActiveSet",
+				(bId, set) =>
+				{
+					Logger.LogInformation(@"hubConnection.On 'UpdateActiveSet' called");
+					if (bId == boardId)
+					{
+						activeSet = (SetOptions)set;
+						InvokeAsync(StateHasChanged);
+					}
+				});
 
-                await hubConnection.StartAsync();
-            }
-        }
-    }
-    private async Task PublishScores()
-    {
-        if (hubConnection is not null)
-        {
-            await hubConnection.SendAsync("SendScoresMessage", boardId, _scores);
-        }
-    }
+				await hubConnection.StartAsync();
+			}
+		}
+	}
+	private async Task PublishScores()
+	{
+		if (hubConnection is not null)
+		{
+			await hubConnection.SendAsync("SendScoresMessage", boardId, _scores);
+		}
+	}
 
-    private async Task PublishTeamInfo()
-    {
-        if (hubConnection is not null)
-        {
-            await hubConnection.SendAsync("SendTeamInfoMessage", boardId, team1, team1Color, team2, team2Color);
-        }
-    }
-    private async Task PublishDisplayInfo()
-    {
-        if (hubConnection is not null)
-        {
-            await hubConnection.SendAsync("SendDisplayMessage", boardId, tournament.ToUpperInvariant(), scoreboardColor);
-        }
-    }
-    private async Task PublishActiveSetInfo()
-    {
-        if (hubConnection is not null)
-        {
-            await hubConnection.SendAsync("SendActiveSetMessage", boardId, (int)activeSet);
-        }
-    }
+	private async Task PublishTeamInfo()
+	{
+		if (hubConnection is not null)
+		{
+			await hubConnection.SendAsync("SendTeamInfoMessage", boardId, team1, team1Color, team2, team2Color);
+		}
+	}
+	private async Task PublishDisplayInfo()
+	{
+		if (hubConnection is not null)
+		{
+			await hubConnection.SendAsync("SendDisplayMessage", boardId, tournament.ToUpperInvariant(), scoreboardColor);
+		}
+	}
+	private async Task PublishActiveSetInfo()
+	{
+		if (hubConnection is not null)
+		{
+			await hubConnection.SendAsync("SendActiveSetMessage", boardId, (int)activeSet);
+		}
+	}
 
-    private async Task UpdateScore(int index, int valueUpDown)
-    {
-        _scores[index] = _scores[index] + valueUpDown;
-        await SaveScoreChanges();
-    }
+	private async Task UpdateScore(int index, int valueUpDown)
+	{
+		_scores[index] = _scores[index] + valueUpDown;
+		await SaveScoreChanges();
+	}
 
-    private async Task ResetSetScores(int index)
-    {
-        _scores[index] = 0;
-        _scores[index + 1] = 0;
+	private async Task ResetSetScores(int index)
+	{
+		_scores[index] = 0;
+		_scores[index + 1] = 0;
 
-        await SaveScoreChanges();
-    }
+		await SaveScoreChanges();
+	}
 
-    private async Task ResetAllScores()
-    {
-        _scores = new int[] { 0, 0, 0, 0, 0, 0 };
+	private async Task ResetAllScores()
+	{
+		_scores = new int[] { 0, 0, 0, 0, 0, 0 };
 
-        await SaveScoreChanges();
-    }
+		await SaveScoreChanges();
+	}
 
-    private void Team1ColorChanged(string e)
-    {
-        team1Color = e;
-    }
+	private void Team1ColorChanged(string e)
+	{
+		team1Color = e;
+	}
 
-    private void Team2ColorChanged(string e)
-    {
-        team2Color = e;
-    }
+	private void Team2ColorChanged(string e)
+	{
+		team2Color = e;
+	}
 
-    private void BoardColorChanged(string e)
-    {
-        scoreboardColor = e;
-    }
-    private async void ActiveSetChanged<SetOptions>(Skorbord.Data.SetOptions e)
-    {
-        activeSet = e;
-        await SaveActiveSet();
-        await PublishActiveSetInfo();
-    }
+	private void BoardColorChanged(string e)
+	{
+		scoreboardColor = e;
+	}
 
-    private async Task SaveMatchInfoClicked()
-    {
-        buttonLoading = true;
-        await SaveBoardInfo();
-        await PublishDisplayInfo();
-        await PublishTeamInfo();
-        buttonLoading = false;
-    }
+	private async void ActiveSetClicked(SetOptions set)
+	{
+		buttonLoading = true;
+		activeSet = set;
+		await SaveActiveSet(set);
+		await PublishActiveSetInfo();
+		buttonLoading = false;
+	}
 
-    private async Task SaveScoreChanges()
-    {
-        buttonLoading = true;
-        using var context = DbFactory.CreateDbContext();
+	private async Task SaveMatchInfoClicked()
+	{
+		buttonLoading = true;
+		await SaveBoardInfo();
+		await PublishDisplayInfo();
+		await PublishTeamInfo();
+		buttonLoading = false;
+	}
 
-        if (context.Scoreboards != null)
-        {
-            var scoreboard = await context.Scoreboards
-            .FirstAsync<Scoreboard>(s => s.ScoreboardId == boardId);
+	private async Task SaveScoreChanges()
+	{
+		buttonLoading = true;
+		using var context = DbFactory.CreateDbContext();
 
-            scoreboard.Scores = new ScoreArray(_scores).ToString();
+		if (context.Scoreboards != null)
+		{
+			var scoreboard = await context.Scoreboards
+			.FirstAsync<Scoreboard>(s => s.ScoreboardId == boardId);
 
-            await context.SaveChangesAsync();
-        }
-        await PublishScores();
-        buttonLoading = false;
-    }
+			scoreboard.Scores = new ScoreArray(_scores).ToString();
 
-    private async Task SaveBoardInfo()
-    {
-        buttonLoading = true;
-        using var context = DbFactory.CreateDbContext();
+			await context.SaveChangesAsync();
+		}
+		await PublishScores();
+		buttonLoading = false;
+	}
 
-        if (context.Scoreboards != null)
-        {
-            var scoreboard = await context.Scoreboards
-            .FirstAsync<Scoreboard>(s => s.ScoreboardId == boardId);
+	private async Task SaveBoardInfo()
+	{
+		buttonLoading = true;
+		using var context = DbFactory.CreateDbContext();
 
-            scoreboard.TeamName1 = team1;
-            scoreboard.TeamName2 = team2;
-            scoreboard.TeamColor1 = team1Color;
-            scoreboard.TeamColor2 = team2Color;
-            scoreboard.Tournament = tournament.ToString().ToUpperInvariant();
-            scoreboard.BoardColor = scoreboardColor;
+		if (context.Scoreboards != null)
+		{
+			var scoreboard = await context.Scoreboards
+			.FirstAsync<Scoreboard>(s => s.ScoreboardId == boardId);
 
-            await context.SaveChangesAsync();
-        }
-        await InvokeAsync(StateHasChanged);
-        buttonLoading = false;
-    }
+			scoreboard.TeamName1 = team1;
+			scoreboard.TeamName2 = team2;
+			scoreboard.TeamColor1 = team1Color;
+			scoreboard.TeamColor2 = team2Color;
+			scoreboard.Tournament = tournament.ToString().ToUpperInvariant();
+			scoreboard.BoardColor = scoreboardColor;
 
-    private async Task SaveActiveSet()
-    {
-        using var context = DbFactory.CreateDbContext();
+			await context.SaveChangesAsync();
+		}
+		await InvokeAsync(StateHasChanged);
+		buttonLoading = false;
+	}
 
-        if (context.Scoreboards != null)
-        {
-            var scoreboard = await context.Scoreboards
-            .FirstAsync<Scoreboard>(s => s.ScoreboardId == boardId);
+	private async Task SaveActiveSet(SetOptions set)
+	{
+		using var context = DbFactory.CreateDbContext();
 
-            scoreboard.ActiveSet = (int)activeSet;
+		if (context.Scoreboards != null)
+		{
+			var scoreboard = await context.Scoreboards
+			.FirstAsync<Scoreboard>(s => s.ScoreboardId == boardId);
 
-            await context.SaveChangesAsync();
-        }
-        await InvokeAsync(StateHasChanged);
-    }
+			scoreboard.ActiveSet = (int)set;
 
-    private int getBoardIdFromSqid(string sqid)
-    {
-        if (sqids.Decode(sqid) is [var decodedId] && sqid == sqids.Encode(decodedId))
-        {
-            // `sqid` decodes into a single number and is canonical, here you can safely proceed with the rest of the logic
-            return 1;
-        }
-        else
-        {
-            // consider `sqid` invalid — e.g. respond with 404
-            return 0;
-        }
-    }
+			await context.SaveChangesAsync();
+		}
+		await InvokeAsync(StateHasChanged);
+	}
 
-    public bool IsConnected =>
-    hubConnection?.State == HubConnectionState.Connected;
+	private int getBoardIdFromSqid(string sqid)
+	{
+		if (sqids.Decode(sqid) is [var decodedId] && sqid == sqids.Encode(decodedId))
+		{
+			// `sqid` decodes into a single number and is canonical, here you can safely proceed with the rest of the logic
+			return 1;
+		}
+		else
+		{
+			// consider `sqid` invalid — e.g. respond with 404
+			return 0;
+		}
+	}
 
-    public async ValueTask DisposeAsync()
-    {
-        if (hubConnection is not null)
-        {
-            await hubConnection.DisposeAsync();
-        }
-    }
+	public bool IsConnected =>
+	hubConnection?.State == HubConnectionState.Connected;
+
+	public async ValueTask DisposeAsync()
+	{
+		if (hubConnection is not null)
+		{
+			await hubConnection.DisposeAsync();
+		}
+	}
 }

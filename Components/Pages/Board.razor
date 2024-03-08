@@ -13,278 +13,279 @@
 @implements IAsyncDisposable
 
 <PageTitle>Skorbord.app</PageTitle>
-<div class="matte">
-    <div class="scoreboard" style="background: @scoreboardColor;">
-        <div class="teams">
-            <div class="scoring">
-                <div class="@setbox1Class">
-                    <div class="@t1s1scoreClass">
-                        @scores[0]
-                    </div>
-                </div>
-                <div class="@setbox2Class">
-                    <div class="@t1s2scoreClass">
-                        @scores[2]
-                    </div>
-                </div>
-                <div class="@setbox3Class">
-                    <div class="@t1s3scoreClass">
-                        @scores[4]
-                    </div>
-                </div>
-            </div>
-            <div class="team-color-1" style="background: @team1Color;" />
-            <div class="team-name">@team1</div>
-        </div>
-    </div>
-    <div class="scoreboard" style="background: @scoreboardColor;">
-        <div class="teams">
-            <div class="scoring">
-                <div class="@setbox1Class">
-                    <div class="@t2s1scoreClass">
-                        @scores[1]
-                    </div>
-                </div>
-                <div class="@setbox2Class">
-                    <div class="@t2s2scoreClass">
-                        @scores[3]
-                    </div>
-                </div>
-                <div class="@setbox3Class">
-                    <div class="@t2s3scoreClass">
-                        @scores[5]
-                    </div>
-                </div>
-            </div>
-            <div class="team-color-2" style="background: @team2Color;" />
-            <div class="team-name">@team2</div>
-        </div>
-    </div>
-</div>
-<div class="tournament">@tournament</div>
+	<div class="matte">
+		<div class="scoreboard" style="background: @scoreboardColor;">
+			<div class="teams">
+				<div class="scoring">
+
+					<div class="@setbox1Class">
+						<div class="@t1s1scoreClass">
+							@scores[0]
+						</div>
+					</div>
+					<div class="@setbox2Class">
+						<div class="@t1s2scoreClass">
+							@scores[2]
+						</div>
+					</div>
+					<div class="@setbox3Class">
+						<div class="@t1s3scoreClass">
+							@scores[4]
+						</div>
+					</div>
+				</div>
+				<div class="team-color-1" style="background: @team1Color;" />
+				<div class="team-name">@team1</div>
+			</div>
+		</div>
+		<div class="scoreboard" style="background: @scoreboardColor;">
+			<div class="teams">
+				<div class="scoring">
+					<div class="@setbox1Class">
+						<div class="@t2s1scoreClass">
+							@scores[1]
+						</div>
+					</div>
+					<div class="@setbox2Class">
+						<div class="@t2s2scoreClass">
+							@scores[3]
+						</div>
+					</div>
+					<div class="@setbox3Class">
+						<div class="@t2s3scoreClass">
+							@scores[5]
+						</div>
+					</div>
+				</div>
+				<div class="team-color-2" style="background: @team2Color;" />
+				<div class="team-name">@team2</div>
+			</div>
+		</div>
+	</div>
+	<div class="tournament">@tournament</div>
 @code {
-    private HubConnection? hubConnection;
-    public bool IsConnected => hubConnection?.State == HubConnectionState.Connected;
+	private HubConnection? hubConnection;
+	public bool IsConnected => hubConnection?.State == HubConnectionState.Connected;
 
-    [Parameter]
-    public string? BoardSqid { get; set; }
+	[Parameter]
+	public string? BoardSqid { get; set; }
 
-    private int[] scores = new int[] { 0, 0, 0, 0, 0, 0 };
-    private string t1s1scoreClass = "score";
-    private string t2s1scoreClass = "score";
-    private string t1s2scoreClass = "score score-inactive";
-    private string t2s2scoreClass = "score score-inactive";
-    private string t1s3scoreClass = "score score-inactive";
-    private string t2s3scoreClass = "score score-inactive";
-    private string team1 = "";
-    private string team2 = "";
-    private string team1Color = "";
-    private string team2Color = "";
-    private string tournament = "";
-    private string scoreboardColor = "";
-    private string setbox1Class = "set-box active";
-    private string setbox2Class = "set-box";
-    private string setbox3Class = "set-box";
-    private SetOptions activeSet = SetOptions.Set1;
+	private int[] scores = new int[] { 0, 0, 0, 0, 0, 0 };
+	private string t1s1scoreClass = "score";
+	private string t2s1scoreClass = "score";
+	private string t1s2scoreClass = "score score-inactive";
+	private string t2s2scoreClass = "score score-inactive";
+	private string t1s3scoreClass = "score score-inactive";
+	private string t2s3scoreClass = "score score-inactive";
+	private string team1 = "";
+	private string team2 = "";
+	private string team1Color = "";
+	private string team2Color = "";
+	private string tournament = "";
+	private string scoreboardColor = "";
+	private string setbox1Class = "set-box active";
+	private string setbox2Class = "set-box";
+	private string setbox3Class = "set-box";
+	private SetOptions activeSet = SetOptions.Set1;
 
 
-    protected override async Task OnInitializedAsync()
-    {
-        var hubUrl = "https://skorbord.app/scorehub";        
-        //var hubUrl = "http://localhost:8000/scorehub";
+	protected override async Task OnInitializedAsync()
+	{
+		var hubUrl = "https://skorbord.app/scorehub";
+		//var hubUrl = "http://localhost:8000/scorehub";
 
-        hubConnection = new HubConnectionBuilder()
-        .WithUrl(hubUrl)
-        .ConfigureLogging(logging =>
-        {
-            // Log to the Console
-            logging.AddConsole();
+		hubConnection = new HubConnectionBuilder()
+		.WithUrl(hubUrl)
+		.ConfigureLogging(logging =>
+		{
+			// Log to the Console
+			logging.AddConsole();
 
-            // This will set ALL logging to Debug level
-            logging.SetMinimumLevel(LogLevel.Debug);
-        })
-        .Build();
+			// This will set ALL logging to Debug level
+			logging.SetMinimumLevel(LogLevel.Debug);
+		})
+		.Build();
 
-        // decode sqid
-        var boardId = getBoardIdFromSqid(BoardSqid!);
+		// decode sqid
+		var boardId = getBoardIdFromSqid(BoardSqid!);
 
-        if (boardId > 0)
-        {
-            //retrieve data
-            using var context = DbFactory.CreateDbContext();
+		if (boardId > 0)
+		{
+			//retrieve data
+			using var context = DbFactory.CreateDbContext();
 
-            if (context.Scoreboards != null)
-            {
-                var scoreboard = await context.Scoreboards
-                                                .AsNoTracking()
-                                                .FirstAsync<Scoreboard>(s => s.ScoreboardId == boardId);
+			if (context.Scoreboards != null)
+			{
+				var scoreboard = await context.Scoreboards
+												.AsNoTracking()
+												.FirstAsync<Scoreboard>(s => s.ScoreboardId == boardId);
 
-                var scoreArray = new ScoreArray(scoreboard.Scores);
-                scores = scoreArray.Scores;
+				var scoreArray = new ScoreArray(scoreboard.Scores);
+				scores = scoreArray.Scores;
 
-                team1 = scoreboard.TeamName1;
-                team2 = scoreboard.TeamName2;
-                team1Color = scoreboard.TeamColor1;
-                team2Color = scoreboard.TeamColor2;
-                tournament = scoreboard.Tournament;
-                scoreboardColor = scoreboard.BoardColor;
-                activeSet = activeSet = (SetOptions)scoreboard.ActiveSet;
+				team1 = scoreboard.TeamName1;
+				team2 = scoreboard.TeamName2;
+				team1Color = scoreboard.TeamColor1;
+				team2Color = scoreboard.TeamColor2;
+				tournament = scoreboard.Tournament;
+				scoreboardColor = scoreboard.BoardColor;
+				activeSet = activeSet = (SetOptions)scoreboard.ActiveSet;
 
-                updateScoreDisplay(scores);
+				updateScoreDisplay(scores);
 
-                hubConnection.On<int, int[]>("UpdateScores", (bId, s) =>
-                {
-                    Logger.LogInformation(@"hubConnection.On 'UpdateScores' called");
-                    if (bId == boardId)
-                    {
-                        scores = s;
+				hubConnection.On<int, int[]>("UpdateScores", (bId, s) =>
+				{
+					Logger.LogInformation(@"hubConnection.On 'UpdateScores' called");
+					if (bId == boardId)
+					{
+						scores = s;
 
-                        updateScoreDisplay(s);
-                        InvokeAsync(StateHasChanged);
-                    }
-                });
+						updateScoreDisplay(s);
+						InvokeAsync(StateHasChanged);
+					}
+				});
 
-                hubConnection.On<int, string, string, string, string>("UpdateTeamInfo",
-                (bId, t1, t1c, t2, t2c) =>
-                {
-                    Logger.LogInformation(@"hubConnection.On 'UpdateTeamInfo' called");
-                    if (bId == boardId)
-                    {
-                        team1 = t1;
-                        team2 = t2;
-                        team1Color = t1c;
-                        team2Color = t2c;
-                        InvokeAsync(StateHasChanged);
-                    }
-                });
+				hubConnection.On<int, string, string, string, string>("UpdateTeamInfo",
+				(bId, t1, t1c, t2, t2c) =>
+				{
+					Logger.LogInformation(@"hubConnection.On 'UpdateTeamInfo' called");
+					if (bId == boardId)
+					{
+						team1 = t1;
+						team2 = t2;
+						team1Color = t1c;
+						team2Color = t2c;
+						InvokeAsync(StateHasChanged);
+					}
+				});
 
-                hubConnection.On<int, string, string>("UpdateDisplay",
-                (bId, trn, bc) =>
-                {
-                    Logger.LogInformation(@"hubConnection.On 'UpdateDisplay' called");
-                    if (bId == boardId)
-                    {
-                        tournament = trn;
-                        scoreboardColor = bc;
-                        InvokeAsync(StateHasChanged);
-                    }
-                });
+				hubConnection.On<int, string, string>("UpdateDisplay",
+				(bId, trn, bc) =>
+				{
+					Logger.LogInformation(@"hubConnection.On 'UpdateDisplay' called");
+					if (bId == boardId)
+					{
+						tournament = trn;
+						scoreboardColor = bc;
+						InvokeAsync(StateHasChanged);
+					}
+				});
 
-                hubConnection.On<int, int>("UpdateActiveSet", 
-                                (bId, set) =>
-                {
-                    Logger.LogInformation(@"hubConnection.On 'UpdateActiveSet' called");
-                    if (bId == boardId)
-                    {
-                        activeSet = (SetOptions)set;
-                        setActiveScoreBox();
-                        InvokeAsync(StateHasChanged);
-                    }
-                });
+				hubConnection.On<int, int>("UpdateActiveSet",
+								(bId, set) =>
+				{
+					Logger.LogInformation(@"hubConnection.On 'UpdateActiveSet' called");
+					if (bId == boardId)
+					{
+						activeSet = (SetOptions)set;
+						setActiveScoreBox();
+						InvokeAsync(StateHasChanged);
+					}
+				});
 
-                await hubConnection.StartAsync();
-            }
-        }
-        await base.OnInitializedAsync();
-    }
+				await hubConnection.StartAsync();
+			}
+		}
+		await base.OnInitializedAsync();
+	}
 
-    private void updateScoreDisplay(int[] scores)
-    {
-        var winningScore = 25;
-        var isThirdSet = false;
-        var scoreDictionary = scores.Select((score, index) => new { Index = index, Score = score })
-        .ToDictionary(x => x.Index, x => x.Index <= 1 ? "score" : "score score-inactive");
+	private void updateScoreDisplay(int[] scores)
+	{
+		var winningScore = 25;
+		var isThirdSet = false;
+		var scoreDictionary = scores.Select((score, index) => new { Index = index, Score = score })
+		.ToDictionary(x => x.Index, x => x.Index <= 1 ? "score" : "score score-inactive");
 
-        //track winning scores to determine if the same team won both sets
-        var winningScoreIndexes = new List<int> { };
-        for (int i = 0; i < scores.Length - 1; i++)
-        {
-            //only compare each set's scores - {0,1}{2,3}{4,5}
-            if (i % 2 == 1) continue;
+		//track winning scores to determine if the same team won both sets
+		var winningScoreIndexes = new List<int> { };
+		for (int i = 0; i < scores.Length - 1; i++)
+		{
+			//only compare each set's scores - {0,1}{2,3}{4,5}
+			if (i % 2 == 1) continue;
 
-            //determine if this is the third set
-            isThirdSet = i is (int)SetOptions.Set3;
-            //third set only goes to 15
-            if (isThirdSet) winningScore = 15;
+			//determine if this is the third set
+			isThirdSet = i is (int)SetOptions.Set3;
+			//third set only goes to 15
+			if (isThirdSet) winningScore = 15;
 
-            if (Math.Max(scores[i], scores[i + 1]) >= winningScore && Math.Abs(scores[i] - scores[i + 1]) >= 2)
-            {
-                int winnerIndex = scores[i] > scores[i + 1] ? i : i + 1;
-                winningScoreIndexes.Add(winnerIndex);
-                scoreDictionary[winnerIndex] = "score-winner";
+			if (Math.Max(scores[i], scores[i + 1]) >= winningScore && Math.Abs(scores[i] - scores[i + 1]) >= 2)
+			{
+				int winnerIndex = scores[i] > scores[i + 1] ? i : i + 1;
+				winningScoreIndexes.Add(winnerIndex);
+				scoreDictionary[winnerIndex] = "score-winner";
 
-                if (!isThirdSet) activateNextSet(winningScoreIndexes, scoreDictionary, i + 1);
-            }
+				if (!isThirdSet) activateNextSet(winningScoreIndexes, scoreDictionary, i + 1);
+			}
 
-            t1s1scoreClass = scoreDictionary[0];
-            t2s1scoreClass = scoreDictionary[1];
-            t1s2scoreClass = scoreDictionary[2];
-            t2s2scoreClass = scoreDictionary[3];
-            t1s3scoreClass = scoreDictionary[4];
-            t2s3scoreClass = scoreDictionary[5];
+			t1s1scoreClass = scoreDictionary[0];
+			t2s1scoreClass = scoreDictionary[1];
+			t1s2scoreClass = scoreDictionary[2];
+			t2s2scoreClass = scoreDictionary[3];
+			t1s3scoreClass = scoreDictionary[4];
+			t2s3scoreClass = scoreDictionary[5];
 
-            setActiveScoreBox();
-        }
-    }
+			setActiveScoreBox();
+		}
+	}
 
-    private void activateNextSet(List<int> winningScoreIndexes, Dictionary<int, string> scoreDictionary, int currentIndex)
-    {
-        bool activateSet = true;
-        //don't show 3rd set scores if the same team won both sets
-        if (winningScoreIndexes.Count == 3) activateSet = false;
+	private void activateNextSet(List<int> winningScoreIndexes, Dictionary<int, string> scoreDictionary, int currentIndex)
+	{
+		bool activateSet = true;
+		//don't show 3rd set scores if the same team won both sets
+		if (winningScoreIndexes.Count == 3) activateSet = false;
 
-        if (winningScoreIndexes.Count == 2)
-        {
-            if (winningScoreIndexes[0] % 2 == winningScoreIndexes[1] % 2)
-            {
-                activateSet = false;
-            }
-        }
+		if (winningScoreIndexes.Count == 2)
+		{
+			if (winningScoreIndexes[0] % 2 == winningScoreIndexes[1] % 2)
+			{
+				activateSet = false;
+			}
+		}
 
-        if (activateSet)
-        {
-            //show the next set's scores
-            scoreDictionary[currentIndex + 1] = scoreDictionary[currentIndex + 1].Replace(" score-inactive", "");
-            scoreDictionary[currentIndex + 2] = scoreDictionary[currentIndex + 2].Replace(" score-inactive", "");
-        }
-    }
+		if (activateSet)
+		{
+			//show the next set's scores
+			scoreDictionary[currentIndex + 1] = scoreDictionary[currentIndex + 1].Replace(" score-inactive", "");
+			scoreDictionary[currentIndex + 2] = scoreDictionary[currentIndex + 2].Replace(" score-inactive", "");
+		}
+	}
 
-    private void setActiveScoreBox()
-    {
-        setbox1Class = setbox2Class = setbox3Class = "set-box";
-        switch (activeSet)
-        {
-            case SetOptions.Set1:
-                setbox1Class += " active";
-                return;
-            case SetOptions.Set2:
-                setbox2Class += " active";
-                return;
-            case SetOptions.Set3:
-                setbox3Class += " active";
-                return;
-        }
-    }
+	private void setActiveScoreBox()
+	{
+		setbox1Class = setbox2Class = setbox3Class = "set-box";
+		switch (activeSet)
+		{
+			case SetOptions.Set1:
+				setbox1Class += " active";
+				return;
+			case SetOptions.Set2:
+				setbox2Class += " active";
+				return;
+			case SetOptions.Set3:
+				setbox3Class += " active";
+				return;
+		}
+	}
 
-    private int getBoardIdFromSqid(string sqid)
-    {
-        if (sqids.Decode(sqid) is [var decodedId] && sqid == sqids.Encode(decodedId))
-        {
-            // `sqid` decodes into a single number and is canonical, here you can safely proceed with the rest of the logic
-            return 1;
-        }
-        else
-        {
-            // consider `sqid` invalid — e.g. respond with 404
-            return 0;
-        }
-    }
+	private int getBoardIdFromSqid(string sqid)
+	{
+		if (sqids.Decode(sqid) is [var decodedId] && sqid == sqids.Encode(decodedId))
+		{
+			// `sqid` decodes into a single number and is canonical, here you can safely proceed with the rest of the logic
+			return 1;
+		}
+		else
+		{
+			// consider `sqid` invalid — e.g. respond with 404
+			return 0;
+		}
+	}
 
-    public async ValueTask DisposeAsync()
-    {
-        if (hubConnection is not null)
-        {
-            await hubConnection.DisposeAsync();
-        }
-    }
+	public async ValueTask DisposeAsync()
+	{
+		if (hubConnection is not null)
+		{
+			await hubConnection.DisposeAsync();
+		}
+	}
 }

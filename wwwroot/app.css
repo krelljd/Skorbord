@@ -64,22 +64,21 @@ h1:focus {
     font-size: 1.3rem;
 }
 
-.reset-scores-button {
-    width: 50%;
-}
-
 .score-button {
     width: 50%;
     height: 15vh;
     font-size: 1.5rem;
-    background-color: #4296DB;
-}
-
-.save-button {
-    width: 100%;
 }
 
 .score-button-container {
+    width: 100%;
+}
+
+.reset-scores-button {
+    width: 50%;
+}
+
+.save-button {
     width: 100%;
 }
 
@@ -90,4 +89,10 @@ h1:focus {
 .score-input {
     width: 25vw;
     text-align: center;
+}
+
+.set-button {
+    width: 33%;
+    height: 8vh;
+    font-size: 1.5rem;
 }
