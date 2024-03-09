@@ -62,7 +62,8 @@
 			</div>
 		</div>
 	</div>
-	<div class="tournament">@tournament</div>
+<div class="bottom-bar">@tournament<div class="right">@DateTime.Today.Date.ToLongDateString()</div></div>
+
 @code {
 	private HubConnection? hubConnection;
 	public bool IsConnected => hubConnection?.State == HubConnectionState.Connected;
