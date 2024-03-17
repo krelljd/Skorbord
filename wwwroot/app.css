@@ -68,6 +68,7 @@ h1:focus {
     width: 50%;
     height: 15vh;
     font-size: 1.5rem;
+    touch-action: manipulation;
 }
 
 .score-button-container {
@@ -95,4 +96,5 @@ h1:focus {
     width: 33%;
     height: 8vh;
     font-size: 1rem;
+    touch-action: manipulation;
 }
