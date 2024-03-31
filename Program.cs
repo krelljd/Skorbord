@@ -21,7 +21,7 @@ builder.Services.AddCors(options => {
         .AllowAnyHeader()
         .AllowAnyOrigin()
         .AllowCredentials()
-        .WithOrigins("http://localhost:8000", "https://skorbord.app");
+        .WithOrigins("http://localhost:8080", "https://skorbord.app");
     });
 });
 
