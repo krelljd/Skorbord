@@ -85,6 +85,7 @@
 	</FluentStack>
 	<FluentStack Orientation="Orientation.Horizontal">
 		<FluentTextField @bind-Value="@team2" Class="team-name-input" Placeholder="Team 2 Name" AutoComplete="off">
+			<FluentIcon Slot="end" Icon="Icons.Regular.Size24.DismissSquare" OnClick="@(() => team2 = string.Empty)"></FluentIcon>
 		</FluentTextField>
 		<ColorSelector CurrentColor="@team2Color" ReturnedColor="Team2ColorChanged" Style="width: 20vw;">
 		</ColorSelector>
