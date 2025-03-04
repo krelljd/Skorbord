@@ -84,8 +84,8 @@
 		</ColorSelector>
 	</FluentStack>
 	<FluentStack Orientation="Orientation.Horizontal">
-		<FluentTextField @bind-Value="@team2" Class="team-name-input" Placeholder="Team 2 Name" AutoComplete="off">
-			<FluentIcon Slot="end" Icon="Icons.Regular.Size24.DismissSquare" OnClick="@(() => team2 = string.Empty)"></FluentIcon>
+		<FluentTextField @ref="team2Field" @bind-Value="@team2" Class="team-name-input" Placeholder="Team 2 Name" AutoComplete="off" Autocapitalize="on">
+			<FluentIcon Slot="end" Icon="Icons.Regular.Size24.DismissSquare" OnClick="@(() => ClearAndFocusTeam2())"></FluentIcon>
 		</FluentTextField>
 		<ColorSelector CurrentColor="@team2Color" ReturnedColor="Team2ColorChanged" Style="width: 20vw;">
 		</ColorSelector>
@@ -145,6 +145,9 @@
 	private SetOptions activeSet = SetOptions.Set1;
 	private string boardUri = "#";
 	private bool buttonLoading = false;
+	private FluentTextField? team2Field;
+	private Timer? _debounceTimer;
+	private const int DEBOUNCE_INTERVAL = 500; // 500ms
 
 	[Parameter]
 	public string? BoardSqid { get; set; }
@@ -158,12 +161,10 @@
 		.WithUrl(hubUrl)
 		.ConfigureLogging(logging =>
 		{
-			// Log to the Console
 			logging.AddConsole();
-
-			// This will set ALL logging to Debug level
 			logging.SetMinimumLevel(LogLevel.Debug);
 		})
+		.WithAutomaticReconnect()
 		.Build();
 
 		// decode sqid
@@ -181,18 +182,22 @@
 				var scoreboard = await context.Scoreboards.AsNoTracking()
 				.FirstAsync<Scoreboard>(s => s.ScoreboardId == boardId);
 
-				team1 = scoreboard.TeamName1;
-				team2 = scoreboard.TeamName2;
-				team1Color = scoreboard.TeamColor1;
-				team2Color = scoreboard.TeamColor2;
-				tournament = scoreboard.Tournament.ToUpperInvariant();
-				scoreboardColor = scoreboard.BoardColor;
-				activeSet = (SetOptions)scoreboard.ActiveSet;
-				_scores = new ScoreArray(scoreboard.Scores).Scores;
+				// Batch state updates
+				await InvokeAsync(() =>
+				{
+					team1 = scoreboard.TeamName1;
+					team2 = scoreboard.TeamName2;
+					team1Color = scoreboard.TeamColor1;
+					team2Color = scoreboard.TeamColor2;
+					tournament = scoreboard.Tournament.ToUpperInvariant();
+					scoreboardColor = scoreboard.BoardColor;
+					activeSet = (SetOptions)scoreboard.ActiveSet;
+					_scores = new ScoreArray(scoreboard.Scores).Scores;
+				});
 
+				// Optimize event handlers to reduce renders
 				hubConnection.On<int, int[]>("UpdateScores", (bId, scores) =>
 				{
-					Logger.LogInformation(@"hubConnection.On 'UpdateScores' called");
 					if (bId == boardId)
 					{
 						_scores = scores;
@@ -203,7 +208,6 @@
 				hubConnection.On<int, string, string, string, string>("UpdateTeamInfo",
 				(bId, t1, t1c, t2, t2c) =>
 				{
-					Logger.LogInformation(@"hubConnection.On 'UpdateTeamInfo' called");
 					if (bId == boardId)
 					{
 						team1 = t1;
@@ -217,7 +221,6 @@
 				hubConnection.On<int, string, string>("UpdateDisplay",
 				(bId, trn, bc) =>
 				{
-					Logger.LogInformation(@"hubConnection.On 'UpdateDisplay' called");
 					if (bId == boardId)
 					{
 						tournament = trn.ToUpperInvariant();
@@ -229,7 +232,6 @@
 				hubConnection.On<int, int>("UpdateActiveSet",
 				(bId, set) =>
 				{
-					Logger.LogInformation(@"hubConnection.On 'UpdateActiveSet' called");
 					if (bId == boardId)
 					{
 						activeSet = (SetOptions)set;
@@ -274,21 +276,31 @@
 	private async Task UpdateScore(int index, int valueUpDown)
 	{
 		_scores[index] = _scores[index] + valueUpDown;
-		await SaveScoreChanges();
+		await PublishScores(); // Immediately publish to other clients
+		await DebounceSaveScoreChanges();
+	}
+
+	private async Task DebounceSaveScoreChanges()
+	{
+		_debounceTimer?.Dispose();
+		_debounceTimer = new Timer(async _ =>
+		{
+			await SaveScoreChanges();
+		}, null, DEBOUNCE_INTERVAL, Timeout.Infinite);
 	}
 
 	private async Task ResetSetScores(int index)
 	{
 		_scores[index] = 0;
 		_scores[index + 1] = 0;
-
+		await PublishScores(); // Immediately publish to other clients
 		await SaveScoreChanges();
 	}
 
 	private async Task ResetAllScores()
 	{
 		_scores = new int[] { 0, 0, 0, 0, 0, 0 };
-
+		await PublishScores(); // Immediately publish to other clients
 		await SaveScoreChanges();
 	}
 
@@ -316,6 +328,15 @@
 		buttonLoading = false;
 	}
 
+	private async Task ClearAndFocusTeam2()
+	{
+		team2 = string.Empty;
+		if (team2Field is not null)
+		{
+			await team2Field.FocusAsync();
+		}
+	}
+
 	private async Task SaveMatchInfoClicked()
 	{
 		buttonLoading = true;
@@ -327,20 +348,26 @@
 
 	private async Task SaveScoreChanges()
 	{
+		if (buttonLoading) return; // Prevent concurrent saves
+		
 		buttonLoading = true;
-		using var context = DbFactory.CreateDbContext();
-
-		if (context.Scoreboards != null)
+		try
 		{
-			var scoreboard = await context.Scoreboards
-			.FirstAsync<Scoreboard>(s => s.ScoreboardId == boardId);
+			using var context = DbFactory.CreateDbContext();
 
-			scoreboard.Scores = new ScoreArray(_scores).ToString();
+			if (context.Scoreboards != null)
+			{
+				var scoreboard = await context.Scoreboards
+				.FirstAsync<Scoreboard>(s => s.ScoreboardId == boardId);
 
-			await context.SaveChangesAsync();
+				scoreboard.Scores = new ScoreArray(_scores).ToString();
+				await context.SaveChangesAsync();
+			}
 		}
-		await PublishScores();
-		buttonLoading = false;
+		finally
+		{
+			buttonLoading = false;
+		}
 	}
 
 	private async Task SaveBoardInfo()
@@ -401,6 +428,7 @@
 
 	public async ValueTask DisposeAsync()
 	{
+		_debounceTimer?.Dispose();
 		if (hubConnection is not null)
 		{
 			await hubConnection.DisposeAsync();
