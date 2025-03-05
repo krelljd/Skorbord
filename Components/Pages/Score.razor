@@ -147,10 +147,44 @@
 	private bool buttonLoading = false;
 	private FluentTextField? team2Field;
 	private Timer? _debounceTimer;
-	private const int DEBOUNCE_INTERVAL = 500; // 500ms
+	private const int DEBOUNCE_INTERVAL = 500; // in ms
+	private const int CACHE_DURATION = 1; // in seconds
+	private DateTime _lastCacheUpdate = DateTime.MinValue;
+	private bool _isInitialLoad = true;
 
 	[Parameter]
 	public string? BoardSqid { get; set; }
+
+	private async Task<Scoreboard?> GetCachedScoreboard()
+	{
+		if (!_isInitialLoad && DateTime.UtcNow.Subtract(_lastCacheUpdate).TotalSeconds < CACHE_DURATION)
+		{
+			return new Scoreboard
+			{
+				ScoreboardId = boardId,
+				TeamName1 = team1,
+				TeamName2 = team2,
+				TeamColor1 = team1Color,
+				TeamColor2 = team2Color,
+				Tournament = tournament,
+				BoardColor = scoreboardColor,
+				ActiveSet = (int)activeSet,
+				Scores = new ScoreArray(_scores).ToString()
+			};
+		}
+
+		using var context = DbFactory.CreateDbContext();
+		if (context.Scoreboards != null)
+		{
+			var scoreboard = await context.Scoreboards.AsNoTracking()
+				.FirstAsync<Scoreboard>(s => s.ScoreboardId == boardId);
+			
+			_isInitialLoad = false;
+			_lastCacheUpdate = DateTime.UtcNow;
+			return scoreboard;
+		}
+		return null;
+	}
 
 	protected override async Task OnInitializedAsync()
 	{
@@ -174,14 +208,9 @@
 
 		if (boardId > 0)
 		{
-			//retrieve data
-			using var context = DbFactory.CreateDbContext();
-
-			if (context.Scoreboards != null)
+			var scoreboard = await GetCachedScoreboard();
+			if (scoreboard != null)
 			{
-				var scoreboard = await context.Scoreboards.AsNoTracking()
-				.FirstAsync<Scoreboard>(s => s.ScoreboardId == boardId);
-
 				// Batch state updates
 				await InvokeAsync(() =>
 				{
@@ -196,17 +225,18 @@
 				});
 
 				// Optimize event handlers to reduce renders
-				hubConnection.On<int, int[]>("UpdateScores", (bId, scores) =>
+				hubConnection.On<int, int[]>("UpdateScores", async (bId, scores) =>
 				{
 					if (bId == boardId)
 					{
 						_scores = scores;
-						InvokeAsync(StateHasChanged);
+						_lastCacheUpdate = DateTime.UtcNow;
+						await InvokeAsync(StateHasChanged);
 					}
 				});
 
 				hubConnection.On<int, string, string, string, string>("UpdateTeamInfo",
-				(bId, t1, t1c, t2, t2c) =>
+				async (bId, t1, t1c, t2, t2c) =>
 				{
 					if (bId == boardId)
 					{
@@ -214,28 +244,31 @@
 						team2 = t2;
 						team1Color = t1c;
 						team2Color = t2c;
-						InvokeAsync(StateHasChanged);
+						_lastCacheUpdate = DateTime.UtcNow;
+						await InvokeAsync(StateHasChanged);
 					}
 				});
 
 				hubConnection.On<int, string, string>("UpdateDisplay",
-				(bId, trn, bc) =>
+				async (bId, trn, bc) =>
 				{
 					if (bId == boardId)
 					{
 						tournament = trn.ToUpperInvariant();
 						scoreboardColor = bc;
-						InvokeAsync(StateHasChanged);
+						_lastCacheUpdate = DateTime.UtcNow;
+						await InvokeAsync(StateHasChanged);
 					}
 				});
 
 				hubConnection.On<int, int>("UpdateActiveSet",
-				(bId, set) =>
+				async (bId, set) =>
 				{
 					if (bId == boardId)
 					{
 						activeSet = (SetOptions)set;
-						InvokeAsync(StateHasChanged);
+						_lastCacheUpdate = DateTime.UtcNow;
+						await InvokeAsync(StateHasChanged);
 					}
 				});
 
@@ -243,6 +276,7 @@
 			}
 		}
 	}
+
 	private async Task PublishScores()
 	{
 		if (hubConnection is not null)
@@ -362,6 +396,7 @@
 
 				scoreboard.Scores = new ScoreArray(_scores).ToString();
 				await context.SaveChangesAsync();
+				_lastCacheUpdate = DateTime.UtcNow;
 			}
 		}
 		finally
@@ -373,24 +408,31 @@
 	private async Task SaveBoardInfo()
 	{
 		buttonLoading = true;
-		using var context = DbFactory.CreateDbContext();
-
-		if (context.Scoreboards != null)
+		try
 		{
-			var scoreboard = await context.Scoreboards
-			.FirstAsync<Scoreboard>(s => s.ScoreboardId == boardId);
+			using var context = DbFactory.CreateDbContext();
 
-			scoreboard.TeamName1 = team1;
-			scoreboard.TeamName2 = team2;
-			scoreboard.TeamColor1 = team1Color;
-			scoreboard.TeamColor2 = team2Color;
-			scoreboard.Tournament = tournament.ToString().ToUpperInvariant();
-			scoreboard.BoardColor = scoreboardColor;
+			if (context.Scoreboards != null)
+			{
+				var scoreboard = await context.Scoreboards
+				.FirstAsync<Scoreboard>(s => s.ScoreboardId == boardId);
 
-			await context.SaveChangesAsync();
+				scoreboard.TeamName1 = team1;
+				scoreboard.TeamName2 = team2;
+				scoreboard.TeamColor1 = team1Color;
+				scoreboard.TeamColor2 = team2Color;
+				scoreboard.Tournament = tournament.ToString().ToUpperInvariant();
+				scoreboard.BoardColor = scoreboardColor;
+
+				await context.SaveChangesAsync();
+				_lastCacheUpdate = DateTime.UtcNow;
+			}
+		}
+		finally
+		{
+			buttonLoading = false;
 		}
 		await InvokeAsync(StateHasChanged);
-		buttonLoading = false;
 	}
 
 	private async Task SaveActiveSet(SetOptions set)
@@ -403,8 +445,8 @@
 			.FirstAsync<Scoreboard>(s => s.ScoreboardId == boardId);
 
 			scoreboard.ActiveSet = (int)set;
-
 			await context.SaveChangesAsync();
+			_lastCacheUpdate = DateTime.UtcNow;
 		}
 		await InvokeAsync(StateHasChanged);
 	}
