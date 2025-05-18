@@ -50,7 +50,7 @@
 			</FluentButton>
 			<FluentButton IconStart="@(new Icons.Regular.Size48.ArrowCircleUp())"
 						  OnClick="@(() => UpdateScore((int)activeSet + 1, 1))" Disabled="@(!IsConnected)"
-						  Appearance="Appearance.Accent" Class="score-button" Loading="@buttonLoading">
+						  Appearance="Appearance.Lightweight" Class="score-button" Loading="@buttonLoading">
 				@_scores[(int)activeSet + 1]
 			</FluentButton>
 		</FluentStack>
