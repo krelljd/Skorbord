@@ -19,7 +19,6 @@ builder.Services.AddCors(options => {
     {
         policy
         .AllowAnyHeader()
-        .AllowAnyOrigin()
         .AllowCredentials()
         .WithOrigins("http://localhost:8000", "https://skorbord.app");
     });
@@ -35,7 +34,7 @@ builder.Services.AddRazorComponents()
 builder.Services.AddResponseCompression(opts => 
 {
     opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
-        new[] { "application/octet-stream"}
+        ["application/octet-stream", "application/json"]
     );
 });
 
@@ -56,8 +55,6 @@ var app = builder.Build();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    //app.UseHsts();
 }
 
 app.UseCors(corsPolicy);
@@ -71,7 +68,6 @@ app.UseAntiforgery();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-//app.Services.GetRequiredService<ILoggerFactory>().CreateLogger<Program>();
 app.MapHub<ScoreHub>("/scorehub");
 
 app.Run();
