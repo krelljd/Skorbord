@@ -96,7 +96,14 @@
 		</ColorSelector>
 	</FluentStack>
 	<FluentStack Orientation="Orientation.Horizontal">
-		<FluentTextField @bind-Value="@team2" Class="team-name-input" Placeholder="Team 2 Name" AutoComplete="off">
+		<FluentTextField 
+                     Class="team-name-input"
+                     Placeholder="Opponent"
+                     AutoComplete="off"
+                     ValueChanged="OnTeam2Changed"
+                     Value="@team2"
+                     IconEnd="@(new Icons.Regular.Size20.Dismiss())"
+                     OnIconEndClick="ClearTeam2Name">
 		</FluentTextField>
 		<ColorSelector CurrentColor="@team2Color" ReturnedColor="Team2ColorChanged" Style="width: 20vw;">
 		</ColorSelector>
@@ -484,5 +491,23 @@
 		{
 			await hubConnection.DisposeAsync();
 		}
+	}
+
+	private void OnTeam2Changed(string value)
+	{
+		if (!string.IsNullOrEmpty(value))
+		{
+			// Capitalize the first letter, keep the rest as is
+			team2 = char.ToUpper(value[0]) + value.Substring(1);
+		}
+		else
+		{
+			team2 = string.Empty;
+		}
+	}
+
+	private void ClearTeam2Name()
+	{
+		team2 = string.Empty;
 	}
 }
