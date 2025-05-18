@@ -426,6 +426,10 @@
 			await context.SaveChangesAsync();
 		}
 		await PublishScores();
+
+		// Add a short delay to ensure the loading icon is visible
+		await Task.Delay(500);
+
 		buttonLoading = false;
 	}
 
@@ -449,6 +453,10 @@
 			await context.SaveChangesAsync();
 		}
 		await InvokeAsync(StateHasChanged);
+
+		// Add a short delay to ensure the loading icon is visible
+		await Task.Delay(500);
+
 		buttonLoading = false;
 	}
 
