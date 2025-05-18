@@ -15,264 +15,120 @@
 <FluentDesignTheme Mode="DesignThemeModes.Light" CustomColor="#557086" />
 
 <div class="score-content">
-	<FluentStack Orientation="Orientation.Vertical" Gap="8">
-		<FluentStack Orientation="Orientation.Vertical" Gap="4">
-			<FluentStack Orientation="Orientation.Horizontal" Wrap="true" Gap="8">
-				<FluentTextField @bind-Value="@team1" Class="team-name-input" Placeholder="Team 1 Name" 
-							   AutoComplete="off" Style="flex: 1; min-width: 200px;">
-				</FluentTextField>
-				<ColorSelector CurrentColor="@team1Color" ReturnedColor="Team1ColorChanged" 
-							  Style="width: 100px; min-width: 100px;">
-				</ColorSelector>
-			</FluentStack>
-			<FluentStack Orientation="Orientation.Horizontal" Wrap="true" Gap="8">
-				<FluentComboBox @ref="team2ComboBox" @bind-Value="@team2" Class="team-name-input" 
-							   Placeholder="Team 2 Name" Items="@teamNames" 
-							   ItemTemplate="@(context => context.ToString())" 
-							   OnInput="@(async (e) => await FilterTeamNames(e.Value?.ToString() ?? ""))"
-							   Style="flex: 1; min-width: 200px;">
-				</FluentComboBox>
-				<ColorSelector CurrentColor="@team2Color" ReturnedColor="Team2ColorChanged" 
-							  Style="width: 100px; min-width: 100px;">
-				</ColorSelector>
-			</FluentStack>
-			<FluentStack Orientation="Orientation.Horizontal" Wrap="true" Gap="8">
-				<FluentTextField @bind-Value="@tournament" Class="team-name-input" 
-							   Placeholder="Tournament Name" AutoComplete="off"
-							   Style="flex: 1; min-width: 200px;">
-				</FluentTextField>
-				<ColorSelector CurrentColor="@scoreboardColor" ReturnedColor="BoardColorChanged" 
-							  Style="width: 100px; min-width: 100px;">
-				</ColorSelector>
-			</FluentStack>
+	<FluentStack Orientation="Orientation.Horizontal" Wrap="true">
+		@team1
+		<FluentStack Orientation="Orientation.Horizontal" Wrap="false">
+			<FluentButton IconStart="@(new Icons.Regular.Size48.ArrowCircleDown())"
+						  OnClick="@(() => UpdateScore((int)activeSet, -1))" Disabled="@(!IsConnected)"
+						  Appearance="Appearance.Neutral" Class="score-button" Loading="@buttonLoading">
+				@_scores[(int)activeSet]
+			</FluentButton>
+			<FluentButton IconStart="@(new Icons.Regular.Size48.ArrowCircleUp())"
+						  OnClick="@(() => UpdateScore((int)activeSet, 1))" Disabled="@(!IsConnected)"
+						  Appearance="Appearance.Accent" Class="score-button" Loading="@buttonLoading">
+				@_scores[(int)activeSet]
+			</FluentButton>
 		</FluentStack>
-
-		<FluentButton IconStart="@(new Icons.Regular.Size24.Save())" OnClick="@(SaveMatchInfoClicked)"
-					  Disabled="@(!IsConnected)" Appearance="Appearance.Accent" 
-					  Loading="@buttonLoading" Class="save-button" Style="width: 100%;">
-			Save Match Info
-		</FluentButton>
-
-		<FluentDivider />
-
-		<FluentStack Orientation="Orientation.Vertical" Gap="8">
-			<FluentTextBlock Style="font-weight: bold;">Team Management</FluentTextBlock>
-			<FluentStack Orientation="Orientation.Horizontal" Wrap="true" Gap="8">
-				<FluentTextField @ref="newTeamField" @bind-Value="@newTeamName" 
-							   Class="team-name-input" Placeholder="New Team Name" 
-							   AutoComplete="off" Style="flex: 1; min-width: 200px;">
-				</FluentTextField>
-				<FluentButton IconStart="@(new Icons.Regular.Size24.Add())" OnClick="@(AddTeam)"
-							Disabled="@(string.IsNullOrWhiteSpace(newTeamName))" 
-							Appearance="Appearance.Accent" Style="min-width: 100px;">
-					Add Team
-				</FluentButton>
-			</FluentStack>
-
-			<FluentDataGrid Items="@teamNames" ResizableColumns="true" 
-						   GridTemplateColumns="1fr auto auto" Style="width: 100%;">
-				<TemplateColumn Title="Team Name">
-					@if (editingTeam == context.Item)
-					{
-						<FluentStack Orientation="Orientation.Horizontal" Gap="4">
-							<FluentTextField @ref="editTeamField" @bind-Value="@editingTeamName" 
-										   Class="team-name-input" AutoComplete="off" 
-										   OnKeyDown="@(async (e) => await HandleEditKeyDown(e, context.Item))"
-										   Style="flex: 1;">
-							</FluentTextField>
-							<FluentButton IconStart="@(new Icons.Regular.Size24.Checkmark())" 
-										OnClick="@(() => SaveTeamEdit(context.Item))"
-										Appearance="Appearance.Accent" Size="AppearanceSize.Small">
-							</FluentButton>
-							<FluentButton IconStart="@(new Icons.Regular.Size24.Dismiss())" 
-										OnClick="@(() => CancelTeamEdit())"
-										Appearance="Appearance.Neutral" Size="AppearanceSize.Small">
-							</FluentButton>
-						</FluentStack>
-					}
-					else
-					{
-						<FluentTextBlock Style="word-break: break-word;">@context.Item</FluentTextBlock>
-					}
-				</TemplateColumn>
-				<TemplateColumn Title="Actions">
-					<FluentStack Orientation="Orientation.Horizontal" Gap="4">
-						@if (editingTeam != context.Item)
-						{
-							<FluentButton IconStart="@(new Icons.Regular.Size24.Edit())" 
-										OnClick="@(() => StartTeamEdit(context.Item))"
-										Appearance="Appearance.Neutral" Size="AppearanceSize.Small">
-							</FluentButton>
-						}
-						<FluentButton IconStart="@(new Icons.Regular.Size24.Delete())" 
-									OnClick="@(() => DeleteTeam(context.Item))"
-									Appearance="Appearance.Neutral" Size="AppearanceSize.Small">
-						</FluentButton>
-					</FluentStack>
-				</TemplateColumn>
-			</FluentDataGrid>
+		@team2
+		<FluentStack Orientation="Orientation.Horizontal" Wrap="false">
+			<FluentButton IconStart="@(new Icons.Regular.Size48.ArrowCircleDown())"
+						  OnClick="@(() => UpdateScore((int)activeSet + 1, -1))" Disabled="@(!IsConnected)"
+						  Appearance="Appearance.Neutral" Class="score-button" Loading="@buttonLoading">
+				@_scores[(int)activeSet + 1]
+			</FluentButton>
+			<FluentButton IconStart="@(new Icons.Regular.Size48.ArrowCircleUp())"
+						  OnClick="@(() => UpdateScore((int)activeSet + 1, 1))" Disabled="@(!IsConnected)"
+						  Appearance="Appearance.Accent" Class="score-button" Loading="@buttonLoading">
+				@_scores[(int)activeSet + 1]
+			</FluentButton>
 		</FluentStack>
-
-		<FluentDivider />
-
-		<FluentAccordion>
-			<FluentAccordionItem Heading="Advanced Settings" HeadingLevel="1">
-				<FluentStack Orientation="Orientation.Vertical" Gap="8">
-					<FluentLabel Alignment="HorizontalAlignment.Center">
-						Board: <a href="@boardUri" target="_blank">@boardUri</a>
-					</FluentLabel>
-					<FluentStack Orientation="Orientation.Vertical" Gap="4">
-						<FluentStack Orientation="Orientation.Horizontal" 
-								   HorizontalAlignment="HorizontalAlignment.Center" Gap="4">
-							<div class="swipe-container" 
-								 @ontouchstart="@(e => HandleTouchStart(e, "score1"))"
-								 @ontouchend="@HandleTouchEnd">
-								<input class="score-input" Size="2" @bind="@_scores[0]"></input>
-								<div class="swipe-feedback @(activeSwipeElement == "score1" ? "active" : "")"></div>
-							</div>
-							<div class="swipe-container"
-								 @ontouchstart="@(e => HandleTouchStart(e, "score2"))"
-								 @ontouchend="@HandleTouchEnd">
-								<input class="score-input" Size="2" @bind="@_scores[2]"></input>
-								<div class="swipe-feedback @(activeSwipeElement == "score2" ? "active" : "")"></div>
-							</div>
-							<div class="swipe-container"
-								 @ontouchstart="@(e => HandleTouchStart(e, "score3"))"
-								 @ontouchend="@HandleTouchEnd">
-								<input class="score-input" Size="2" @bind="@_scores[4]"></input>
-								<div class="swipe-feedback @(activeSwipeElement == "score3" ? "active" : "")"></div>
-							</div>
-						</FluentStack>
-						<FluentStack Orientation="Orientation.Horizontal" 
-								   HorizontalAlignment="HorizontalAlignment.Center" Gap="4">
-							<div class="swipe-container"
-								 @ontouchstart="@(e => HandleTouchStart(e, "score4"))"
-								 @ontouchend="@HandleTouchEnd">
-								<input class="score-input" Size="2" @bind="@_scores[1]"></input>
-								<div class="swipe-feedback @(activeSwipeElement == "score4" ? "active" : "")"></div>
-							</div>
-							<div class="swipe-container"
-								 @ontouchstart="@(e => HandleTouchStart(e, "score5"))"
-								 @ontouchend="@HandleTouchEnd">
-								<input class="score-input" Size="2" @bind="@_scores[3]"></input>
-								<div class="swipe-feedback @(activeSwipeElement == "score5" ? "active" : "")"></div>
-							</div>
-							<div class="swipe-container"
-								 @ontouchstart="@(e => HandleTouchStart(e, "score6"))"
-								 @ontouchend="@HandleTouchEnd">
-								<input class="score-input" Size="2" @bind="@_scores[5]"></input>
-								<div class="swipe-feedback @(activeSwipeElement == "score6" ? "active" : "")"></div>
-							</div>
-						</FluentStack>
-					</FluentStack>
-					<FluentButton IconStart="@(new Icons.Regular.Size24.Save())" 
-								OnClick="@(PublishScores)"
-								Disabled="@(!IsConnected)" Appearance="Appearance.Accent" 
-								Class="save-button" Loading="@buttonLoading" Style="width: 100%;">
-						Save Scores
-					</FluentButton>
-				</FluentStack>
-			</FluentAccordionItem>
-		</FluentAccordion>
 	</FluentStack>
+	<br>
+	Active Set
+	<FluentStack Orientation="Orientation.Horizontal" Wrap="false">
+		<FluentButton IconStart="@(new Icons.Regular.Size32.Flag())"
+					  OnClick="@(e => ActiveSetClicked(SetOptions.Set1))" Disabled="@(!IsConnected)"
+					  Appearance="@(activeSet == SetOptions.Set1 ? Appearance.Accent : Appearance.Neutral)" 
+					  Class="set-button" Loading="@buttonLoading">Set 1
+		</FluentButton>
+		<FluentButton IconStart="@(new Icons.Regular.Size32.Flag())"
+					  OnClick="@(() => ActiveSetClicked(SetOptions.Set2))" Disabled="@(!IsConnected)"
+					  Appearance="@(activeSet == SetOptions.Set2 ? Appearance.Accent : Appearance.Neutral)"
+					  Class="set-button" Loading="@buttonLoading">Set 2
+		</FluentButton>
+		<FluentButton IconStart="@(new Icons.Regular.Size32.FlagClock())"
+					  OnClick="@(() => ActiveSetClicked(SetOptions.Set3))" Disabled="@(!IsConnected)"
+					  Appearance="@(activeSet == SetOptions.Set3 ? Appearance.Accent : Appearance.Stealth)"
+					  Class="set-button" Loading="@buttonLoading">Set 3
+		</FluentButton>
+	</FluentStack>
+	<br />
+	<FluentStack Orientation="Orientation.Horizontal" Wrap="false">
+		<FluentButton IconStart="@(new Icons.Regular.Size24.DismissSquare())"
+					  OnClick="@(() => ResetSetScores((int)activeSet))" Disabled="@(!IsConnected)" BackgroundColor="var(--error)"
+					  Appearance="Appearance.Accent" Loading="@buttonLoading" Class="reset-scores-button">
+			Reset @activeSet Scores
+		</FluentButton>
+		<FluentButton IconStart="@(new Icons.Regular.Size24.DismissSquare())" OnClick="@(() => ResetAllScores())"
+					  Disabled="@(!IsConnected)" BackgroundColor="var(--error)" Appearance="Appearance.Accent"
+					  Loading="@buttonLoading" Class="reset-scores-button">
+			Reset Match Scores
+		</FluentButton>
+	</FluentStack>
+	<hr>
+	Administration
+	<FluentStack Orientation="Orientation.Horizontal">
+		<FluentTextField @bind-Value="@team1" Class="team-name-input" Placeholder="Team 1 Name" AutoComplete="off">
+		</FluentTextField>
+		<ColorSelector CurrentColor="@team1Color" ReturnedColor="Team1ColorChanged" Style="width: 20vw;">
+		</ColorSelector>
+	</FluentStack>
+	<FluentStack Orientation="Orientation.Horizontal">
+		<FluentTextField @bind-Value="@team2" Class="team-name-input" Placeholder="Team 2 Name" AutoComplete="off">
+		</FluentTextField>
+		<ColorSelector CurrentColor="@team2Color" ReturnedColor="Team2ColorChanged" Style="width: 20vw;">
+		</ColorSelector>
+	</FluentStack>
+	<FluentStack Orientation="Orientation.Horizontal">
+		<FluentTextField @bind-Value="@tournament" Class="team-name-input" Placeholder="Tournament Name"
+						 AutoComplete="off"></FluentTextField>
+		<ColorSelector CurrentColor="@scoreboardColor" ReturnedColor="BoardColorChanged" Style="width: 20vw;">
+		</ColorSelector>
+	</FluentStack>
+	<br>
+	<FluentButton IconStart="@(new Icons.Regular.Size24.Save())" OnClick="@(SaveMatchInfoClicked)"
+				  Disabled="@(!IsConnected)" Appearance="Appearance.Accent" Loading="@buttonLoading" Class="save-button">
+		Save Match Info
+	</FluentButton>
+	<br>
+	<hr>
+	<FluentAccordion>
+		<FluentAccordionItem Heading="Advanced Settings" HeadingLevel="1">
+			<FluentLabel Alignment="HorizontalAlignment.Center">
+				Board: <a href="@boardUri" target="_blank">@boardUri</a>
+			</FluentLabel>
+			<br>
+			<FluentIcon Value="@(new Icons.Regular.Size20.Edit())" Color="@Color.Neutral" Slot="start" />
+			<FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Center">
+				<input class="score-input" Size="2" @bind="@_scores[0]"></input>
+				<input class="score-input" Size="2" @bind="@_scores[2]"></input>
+				<input class="score-input" Size="2" @bind="@_scores[4]"></input>
+			</FluentStack>
+			<FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Center">
+				<input class="score-input" Size="2" @bind="@_scores[1]"></input>
+				<input class="score-input" Size="2" @bind="@_scores[3]"></input>
+				<input class="score-input" Size="2" @bind="@_scores[5]"></input>
+			</FluentStack>
+			<br>
+			<FluentButton IconStart="@(new Icons.Regular.Size24.Save())" OnClick="@(PublishScores)"
+						  Disabled="@(!IsConnected)" Appearance="Appearance.Accent" Class="save-button" Loading="@buttonLoading">
+				Save Scores
+			</FluentButton>
+		</FluentAccordionItem>
+	</FluentAccordion>
+	<br>
+	<br>
 </div>
-
-<style>
-	.score-content {
-		padding: 16px;
-		max-width: 800px;
-		margin: 0 auto;
-	}
-
-	.team-name-input {
-		width: 100%;
-	}
-
-	.score-input {
-		width: 40px;
-		height: 40px;
-		text-align: center;
-		font-size: 1.2em;
-		border: 1px solid var(--neutral-stroke-rest);
-		border-radius: 4px;
-		transition: background-color 0.2s ease;
-	}
-
-	.score-input:active {
-		background-color: var(--neutral-fill-secondary);
-	}
-
-	.save-button {
-		margin: 8px 0;
-		transition: transform 0.2s ease, background-color 0.2s ease;
-	}
-
-	.save-button:active {
-		transform: scale(0.98);
-		background-color: var(--accent-fill-active);
-	}
-
-	.swipe-container {
-		position: relative;
-		overflow: hidden;
-		touch-action: pan-y pinch-zoom;
-	}
-
-	.swipe-feedback {
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		background-color: var(--accent-fill-subtle);
-		opacity: 0;
-		transition: opacity 0.2s ease;
-		pointer-events: none;
-	}
-
-	.swipe-feedback.active {
-		opacity: 0.3;
-	}
-
-	@media (max-width: 600px) {
-		.score-content {
-			padding: 8px;
-		}
-
-		.score-input {
-			width: 35px;
-			height: 35px;
-			font-size: 1em;
-		}
-
-		.team-name-input {
-			font-size: 16px; /* Prevents zoom on iOS */
-		}
-
-		::deep .fluent-data-grid {
-			font-size: 14px;
-		}
-
-		::deep .fluent-button {
-			padding: 4px 8px;
-			transition: transform 0.2s ease, background-color 0.2s ease;
-		}
-
-		::deep .fluent-button:active {
-			transform: scale(0.98);
-			background-color: var(--accent-fill-active);
-		}
-
-		::deep .fluent-text-field {
-			padding: 4px 8px;
-			transition: background-color 0.2s ease;
-		}
-
-		::deep .fluent-text-field:active {
-			background-color: var(--neutral-fill-secondary);
-		}
-	}
-</style>
 
 @code {
 	private HubConnection? hubConnection;
@@ -288,57 +144,9 @@
 	private SetOptions activeSet = SetOptions.Set1;
 	private string boardUri = "#";
 	private bool buttonLoading = false;
-	private FluentComboBox? team2ComboBox;
-	private FluentTextField? newTeamField;
-	private string newTeamName = "";
-	private List<string> teamNames = new();
-	private List<string> filteredTeamNames = new();
-	private Timer? _debounceTimer;
-	private const int DEBOUNCE_INTERVAL = 500; // in ms
-	private const int CACHE_DURATION = 1; // in seconds
-	private DateTime _lastCacheUpdate = DateTime.MinValue;
-	private bool _isInitialLoad = true;
-	private string? editingTeam;
-	private string editingTeamName = "";
-	private FluentTextField? editTeamField;
-	private double touchStartX;
-	private double touchStartY;
-	private bool isSwiping;
-	private string? activeSwipeElement;
 
 	[Parameter]
 	public string? BoardSqid { get; set; }
-
-	private async Task<Scoreboard?> GetCachedScoreboard()
-	{
-		if (!_isInitialLoad && DateTime.UtcNow.Subtract(_lastCacheUpdate).TotalSeconds < CACHE_DURATION)
-		{
-			return new Scoreboard
-			{
-				ScoreboardId = boardId,
-				TeamName1 = team1,
-				TeamName2 = team2,
-				TeamColor1 = team1Color,
-				TeamColor2 = team2Color,
-				Tournament = tournament,
-				BoardColor = scoreboardColor,
-				ActiveSet = (int)activeSet,
-				Scores = new ScoreArray(_scores).ToString()
-			};
-		}
-
-		using var context = DbFactory.CreateDbContext();
-		if (context.Scoreboards != null)
-		{
-			var scoreboard = await context.Scoreboards.AsNoTracking()
-				.FirstAsync<Scoreboard>(s => s.ScoreboardId == boardId);
-			
-			_isInitialLoad = false;
-			_lastCacheUpdate = DateTime.UtcNow;
-			return scoreboard;
-		}
-		return null;
-	}
 
 	protected override async Task OnInitializedAsync()
 	{
@@ -347,12 +155,15 @@
 
 		hubConnection = new HubConnectionBuilder()
 		.WithUrl(hubUrl)
+		.WithAutomaticReconnect()
 		.ConfigureLogging(logging =>
 		{
+			// Log to the Console
 			logging.AddConsole();
+
+			// This will set ALL logging to Debug level
 			logging.SetMinimumLevel(LogLevel.Debug);
 		})
-		.WithAutomaticReconnect()
 		.Build();
 
 		// decode sqid
@@ -362,68 +173,67 @@
 
 		if (boardId > 0)
 		{
-			await LoadTeamNames();
-			var scoreboard = await GetCachedScoreboard();
-			if (scoreboard != null)
-			{
-				// Batch state updates
-				await InvokeAsync(() =>
-				{
-					team1 = scoreboard.TeamName1;
-					team2 = scoreboard.TeamName2;
-					team1Color = scoreboard.TeamColor1;
-					team2Color = scoreboard.TeamColor2;
-					tournament = scoreboard.Tournament.ToUpperInvariant();
-					scoreboardColor = scoreboard.BoardColor;
-					activeSet = (SetOptions)scoreboard.ActiveSet;
-					_scores = new ScoreArray(scoreboard.Scores).Scores;
-				});
+			//retrieve data
+			using var context = DbFactory.CreateDbContext();
 
-				// Optimize event handlers to reduce renders
-				hubConnection.On<int, int[]>("UpdateScores", async (bId, scores) =>
+			if (context.Scoreboards != null)
+			{
+				var scoreboard = await context.Scoreboards.AsNoTracking()
+				.FirstAsync<Scoreboard>(s => s.ScoreboardId == boardId);
+
+				team1 = scoreboard.TeamName1;
+				team2 = scoreboard.TeamName2;
+				team1Color = scoreboard.TeamColor1;
+				team2Color = scoreboard.TeamColor2;
+				tournament = scoreboard.Tournament.ToUpperInvariant();
+				scoreboardColor = scoreboard.BoardColor;
+				activeSet = (SetOptions)scoreboard.ActiveSet;
+				_scores = new ScoreArray(scoreboard.Scores).Scores;
+
+				hubConnection.On<int, int[]>("UpdateScores", (bId, scores) =>
 				{
+					Logger.LogInformation(@"hubConnection.On 'UpdateScores' called");
 					if (bId == boardId)
 					{
 						_scores = scores;
-						_lastCacheUpdate = DateTime.UtcNow;
-						await InvokeAsync(StateHasChanged);
+						InvokeAsync(StateHasChanged);
 					}
 				});
 
 				hubConnection.On<int, string, string, string, string>("UpdateTeamInfo",
-				async (bId, t1, t1c, t2, t2c) =>
+				(bId, t1, t1c, t2, t2c) =>
 				{
+					Logger.LogInformation(@"hubConnection.On 'UpdateTeamInfo' called");
 					if (bId == boardId)
 					{
 						team1 = t1;
 						team2 = t2;
 						team1Color = t1c;
 						team2Color = t2c;
-						_lastCacheUpdate = DateTime.UtcNow;
-						await InvokeAsync(StateHasChanged);
+						InvokeAsync(StateHasChanged);
 					}
 				});
 
 				hubConnection.On<int, string, string>("UpdateDisplay",
-				async (bId, trn, bc) =>
+				(bId, trn, bc) =>
 				{
+					Logger.LogInformation(@"hubConnection.On 'UpdateDisplay' called");
 					if (bId == boardId)
 					{
 						tournament = trn.ToUpperInvariant();
 						scoreboardColor = bc;
-						_lastCacheUpdate = DateTime.UtcNow;
-						await InvokeAsync(StateHasChanged);
+						InvokeAsync(StateHasChanged);
 					}
 				});
 
 				hubConnection.On<int, int>("UpdateActiveSet",
-				async (bId, set) =>
+				(bId, set) =>
 				{
+					Logger.LogInformation(@"hubConnection.On 'UpdateActiveSet' called");
 					if (bId == boardId)
 					{
 						activeSet = (SetOptions)set;
-						_lastCacheUpdate = DateTime.UtcNow;
-						await InvokeAsync(StateHasChanged);
+						InvokeAsync(StateHasChanged);
 					}
 				});
 
@@ -431,7 +241,6 @@
 			}
 		}
 	}
-
 	private async Task PublishScores()
 	{
 		if (hubConnection is not null)
@@ -465,31 +274,21 @@
 	private async Task UpdateScore(int index, int valueUpDown)
 	{
 		_scores[index] = _scores[index] + valueUpDown;
-		await PublishScores(); // Immediately publish to other clients
-		await DebounceSaveScoreChanges();
-	}
-
-	private async Task DebounceSaveScoreChanges()
-	{
-		_debounceTimer?.Dispose();
-		_debounceTimer = new Timer(async _ =>
-		{
-			await SaveScoreChanges();
-		}, null, DEBOUNCE_INTERVAL, Timeout.Infinite);
+		await SaveScoreChanges();
 	}
 
 	private async Task ResetSetScores(int index)
 	{
 		_scores[index] = 0;
 		_scores[index + 1] = 0;
-		await PublishScores(); // Immediately publish to other clients
+
 		await SaveScoreChanges();
 	}
 
 	private async Task ResetAllScores()
 	{
 		_scores = new int[] { 0, 0, 0, 0, 0, 0 };
-		await PublishScores(); // Immediately publish to other clients
+
 		await SaveScoreChanges();
 	}
 
@@ -517,15 +316,6 @@
 		buttonLoading = false;
 	}
 
-	private async Task ClearAndFocusTeam2()
-	{
-		team2 = string.Empty;
-		if (team2ComboBox is not null)
-		{
-			await team2ComboBox.FocusAsync();
-		}
-	}
-
 	private async Task SaveMatchInfoClicked()
 	{
 		buttonLoading = true;
@@ -537,57 +327,43 @@
 
 	private async Task SaveScoreChanges()
 	{
-		if (buttonLoading) return; // Prevent concurrent saves
-		
 		buttonLoading = true;
-		try
-		{
-			using var context = DbFactory.CreateDbContext();
+		using var context = DbFactory.CreateDbContext();
 
-			if (context.Scoreboards != null)
-			{
-				var scoreboard = await context.Scoreboards
-				.FirstAsync<Scoreboard>(s => s.ScoreboardId == boardId);
-
-				scoreboard.Scores = new ScoreArray(_scores).ToString();
-				await context.SaveChangesAsync();
-				_lastCacheUpdate = DateTime.UtcNow;
-			}
-		}
-		finally
+		if (context.Scoreboards != null)
 		{
-			buttonLoading = false;
+			var scoreboard = await context.Scoreboards
+			.FirstAsync<Scoreboard>(s => s.ScoreboardId == boardId);
+
+			scoreboard.Scores = new ScoreArray(_scores).ToString();
+
+			await context.SaveChangesAsync();
 		}
+		await PublishScores();
+		buttonLoading = false;
 	}
 
 	private async Task SaveBoardInfo()
 	{
 		buttonLoading = true;
-		try
+		using var context = DbFactory.CreateDbContext();
+
+		if (context.Scoreboards != null)
 		{
-			using var context = DbFactory.CreateDbContext();
+			var scoreboard = await context.Scoreboards
+			.FirstAsync<Scoreboard>(s => s.ScoreboardId == boardId);
 
-			if (context.Scoreboards != null)
-			{
-				var scoreboard = await context.Scoreboards
-				.FirstAsync<Scoreboard>(s => s.ScoreboardId == boardId);
+			scoreboard.TeamName1 = team1;
+			scoreboard.TeamName2 = team2;
+			scoreboard.TeamColor1 = team1Color;
+			scoreboard.TeamColor2 = team2Color;
+			scoreboard.Tournament = tournament.ToString().ToUpperInvariant();
+			scoreboard.BoardColor = scoreboardColor;
 
-				scoreboard.TeamName1 = team1;
-				scoreboard.TeamName2 = team2;
-				scoreboard.TeamColor1 = team1Color;
-				scoreboard.TeamColor2 = team2Color;
-				scoreboard.Tournament = tournament.ToString().ToUpperInvariant();
-				scoreboard.BoardColor = scoreboardColor;
-
-				await context.SaveChangesAsync();
-				_lastCacheUpdate = DateTime.UtcNow;
-			}
-		}
-		finally
-		{
-			buttonLoading = false;
+			await context.SaveChangesAsync();
 		}
 		await InvokeAsync(StateHasChanged);
+		buttonLoading = false;
 	}
 
 	private async Task SaveActiveSet(SetOptions set)
@@ -600,8 +376,8 @@
 			.FirstAsync<Scoreboard>(s => s.ScoreboardId == boardId);
 
 			scoreboard.ActiveSet = (int)set;
+
 			await context.SaveChangesAsync();
-			_lastCacheUpdate = DateTime.UtcNow;
 		}
 		await InvokeAsync(StateHasChanged);
 	}
@@ -625,216 +401,9 @@
 
 	public async ValueTask DisposeAsync()
 	{
-		_debounceTimer?.Dispose();
 		if (hubConnection is not null)
 		{
 			await hubConnection.DisposeAsync();
 		}
-	}
-
-	private async Task LoadTeamNames()
-	{
-		using var context = DbFactory.CreateDbContext();
-		if (context.TeamNames != null)
-		{
-			teamNames = await context.TeamNames
-				.Where(t => t.ScoreboardId == boardId)
-				.Select(t => t.Name)
-				.ToListAsync();
-			filteredTeamNames = teamNames;
-		}
-	}
-
-	private async Task FilterTeamNames(string searchText)
-	{
-		if (string.IsNullOrWhiteSpace(searchText))
-		{
-			filteredTeamNames = teamNames;
-			return;
-		}
-
-		filteredTeamNames = teamNames.Where(t => 
-			t.Contains(searchText, StringComparison.OrdinalIgnoreCase)).ToList();
-	}
-
-	private async Task AddTeam()
-	{
-		if (string.IsNullOrWhiteSpace(newTeamName)) return;
-
-		using var context = DbFactory.CreateDbContext();
-		if (context.TeamNames != null)
-		{
-			var teamName = newTeamName.Trim();
-			if (!teamNames.Contains(teamName))
-			{
-				context.TeamNames.Add(new TeamName 
-				{ 
-					Name = teamName,
-					ScoreboardId = boardId
-				});
-				await context.SaveChangesAsync();
-				teamNames.Add(teamName);
-				filteredTeamNames = teamNames;
-				newTeamName = "";
-				if (newTeamField is not null)
-				{
-					await newTeamField.FocusAsync();
-				}
-			}
-		}
-	}
-
-	private async Task StartTeamEdit(string teamName)
-	{
-		editingTeam = teamName;
-		editingTeamName = teamName;
-		await InvokeAsync(async () =>
-		{
-			if (editTeamField is not null)
-			{
-				await editTeamField.FocusAsync();
-			}
-		});
-	}
-
-	private async Task SaveTeamEdit(string oldTeamName)
-	{
-		if (string.IsNullOrWhiteSpace(editingTeamName)) return;
-
-		var newTeamName = editingTeamName.Trim();
-		if (newTeamName != oldTeamName && !teamNames.Contains(newTeamName))
-		{
-			using var context = DbFactory.CreateDbContext();
-			if (context.TeamNames != null)
-			{
-				var team = await context.TeamNames
-					.FirstOrDefaultAsync(t => t.Name == oldTeamName && t.ScoreboardId == boardId);
-				if (team != null)
-				{
-					team.Name = newTeamName;
-					await context.SaveChangesAsync();
-					
-					// Update local lists
-					var index = teamNames.IndexOf(oldTeamName);
-					if (index != -1)
-					{
-						teamNames[index] = newTeamName;
-					}
-					filteredTeamNames = teamNames;
-
-					// Update team2 if it matches the edited team
-					if (team2 == oldTeamName)
-					{
-						team2 = newTeamName;
-					}
-				}
-			}
-		}
-		CancelTeamEdit();
-	}
-
-	private void CancelTeamEdit()
-	{
-		editingTeam = null;
-		editingTeamName = "";
-	}
-
-	private async Task HandleEditKeyDown(KeyboardEventArgs e, string teamName)
-	{
-		if (e.Key == "Enter")
-		{
-			await SaveTeamEdit(teamName);
-		}
-		else if (e.Key == "Escape")
-		{
-			CancelTeamEdit();
-		}
-	}
-
-	private async Task DeleteTeam(string teamName)
-	{
-		using var context = DbFactory.CreateDbContext();
-		if (context.TeamNames != null)
-		{
-			var team = await context.TeamNames
-				.FirstOrDefaultAsync(t => t.Name == teamName && t.ScoreboardId == boardId);
-			if (team != null)
-			{
-				context.TeamNames.Remove(team);
-				await context.SaveChangesAsync();
-				teamNames.Remove(teamName);
-				filteredTeamNames = teamNames;
-				
-				// Clear team2 if it matches the deleted team
-				if (team2 == teamName)
-				{
-					team2 = "";
-				}
-			}
-		}
-	}
-
-	private void HandleTouchStart(TouchEventArgs e, string elementId)
-	{
-		touchStartX = e.Touches[0].ClientX;
-		touchStartY = e.Touches[0].ClientY;
-		isSwiping = true;
-		activeSwipeElement = elementId;
-		StateHasChanged();
-	}
-
-	private async Task HandleTouchEnd(TouchEventArgs e)
-	{
-		if (!isSwiping) return;
-
-		var touchEndX = e.ChangedTouches[0].ClientX;
-		var touchEndY = e.ChangedTouches[0].ClientY;
-		var deltaX = touchEndX - touchStartX;
-		var deltaY = touchEndY - touchStartY;
-
-		// Only process horizontal swipes
-		if (Math.Abs(deltaX) > Math.Abs(deltaY))
-		{
-			switch (activeSwipeElement)
-			{
-				case "score1":
-					if (deltaX > 50) await UpdateScore(0, 1);
-					else if (deltaX < -50) await UpdateScore(0, -1);
-					break;
-				case "score2":
-					if (deltaX > 50) await UpdateScore(1, 1);
-					else if (deltaX < -50) await UpdateScore(1, -1);
-					break;
-				case "score3":
-					if (deltaX > 50) await UpdateScore(2, 1);
-					else if (deltaX < -50) await UpdateScore(2, -1);
-					break;
-				case "score4":
-					if (deltaX > 50) await UpdateScore(3, 1);
-					else if (deltaX < -50) await UpdateScore(3, -1);
-					break;
-				case "score5":
-					if (deltaX > 50) await UpdateScore(4, 1);
-					else if (deltaX < -50) await UpdateScore(4, -1);
-					break;
-				case "score6":
-					if (deltaX > 50) await UpdateScore(5, 1);
-					else if (deltaX < -50) await UpdateScore(5, -1);
-					break;
-				case "set1":
-					if (deltaX > 50) await ActiveSetClicked(SetOptions.Set1);
-					break;
-				case "set2":
-					if (deltaX > 50) await ActiveSetClicked(SetOptions.Set2);
-					break;
-				case "set3":
-					if (deltaX > 50) await ActiveSetClicked(SetOptions.Set3);
-					break;
-			}
-		}
-
-		isSwiping = false;
-		activeSwipeElement = null;
-		StateHasChanged();
 	}
 }
